@@ -17,6 +17,22 @@ services:
       timeout: 5s
       retries: 5
 
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   auth-service:
     image: ${DOCKERHUB_USERNAME}/auth-service:latest
     container_name: auth-service
@@ -46,6 +62,92 @@ services:
     depends_on:
       - auth-service
 
+  presenca-db:
+    image: postgres:17
+    container_name: presenca-db
+    environment:
+      POSTGRES_DB: ${PRESENCA_DB_NAME}
+      POSTGRES_USER: ${PRESENCA_DB_USER}
+      POSTGRES_PASSWORD: ${PRESENCA_DB_PASSWORD}
+    volumes:
+      - presenca-db-data:/var/lib/postgresql/data
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${PRESENCA_DB_USER}", "-d", "${PRESENCA_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  presenca-service:
+    image: ${DOCKERHUB_USERNAME}/presenca-service:latest
+    container_name: presenca-service
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://presenca-db:5432/${PRESENCA_DB_NAME}
+      SPRING_DATASOURCE_USERNAME: ${PRESENCA_DB_USER}
+      SPRING_DATASOURCE_PASSWORD: ${PRESENCA_DB_PASSWORD}
+      SPRING_PROFILES_ACTIVE: prod
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+    networks:
+      - backend
+    depends_on:
+      presenca-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  register-adm-service:
+    image: ${DOCKERHUB_USERNAME}/register-adm-service:latest
+    container_name: register-adm-service
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+    networks:
+      - backend
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  relatorio-db:
+    image: postgres:17
+    container_name: relatorio-db
+    environment:
+      POSTGRES_DB: ${RELATORIO_DB_NAME}
+      POSTGRES_USER: ${RELATORIO_DB_USER}
+      POSTGRES_PASSWORD: ${RELATORIO_DB_PASSWORD}
+    volumes:
+      - relatorio-db-data:/var/lib/postgresql/data
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${RELATORIO_DB_USER}", "-d", "${RELATORIO_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  relatorio-service:
+    image: ${DOCKERHUB_USERNAME}/relatorio-service:latest
+    container_name: relatorio-service
+    environment:
+      ConnectionStrings__RelatoriosDb: Host=relatorio-db;Port=5432;Database=${RELATORIO_DB_NAME};Username=${RELATORIO_DB_USER};Password=${RELATORIO_DB_PASSWORD}
+      PresencaService__BaseUrl: http://presenca-service:8082
+      RabbitMQ__Host: rabbitmq
+      RabbitMQ__Port: 5672
+      RabbitMQ__Username: ${RABBITMQ_USERNAME}
+      RabbitMQ__Password: ${RABBITMQ_PASSWORD}
+    networks:
+      - backend
+    depends_on:
+      relatorio-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
 networks:
   frontend:
     driver: bridge
@@ -55,3 +157,6 @@ networks:
 
 volumes:
   mariadb-data:
+  rabbitmq-data:
+  presenca-db-data:
+  relatorio-db-data:
