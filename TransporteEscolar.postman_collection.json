@@ -1,0 +1,475 @@
+{
+  "info": {
+    "name": "Transporte Escolar — API",
+    "description": "Collection completa da API do sistema de transporte escolar. Base URL configurável via variável de ambiente.\n\nComo usar:\n1. Importe esta collection\n2. Crie um Environment com a variável `base_url` = https://api-gateway.politegrass-b0f9539d.brazilsouth.azurecontainerapps.io\n3. Execute **Auth / Login** — o token será salvo automaticamente\n4. Todas as demais requisições usam o token automaticamente",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "https://api-gateway.politegrass-b0f9539d.brazilsouth.azurecontainerapps.io" },
+    { "key": "token", "value": "" }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "url": "{{base_url}}/api/auth/register",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"João Silva\",\n  \"email\": \"joao@furb.br\",\n  \"password\": \"senha123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "const res = pm.response.json();",
+                "if (res.token) {",
+                "  pm.collectionVariables.set('token', res.token);",
+                "  console.log('Token salvo com sucesso');",
+                "}"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "url": "{{base_url}}/api/auth/login",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"joao@furb.br\",\n  \"password\": \"senha123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Update User Role",
+          "request": {
+            "method": "PATCH",
+            "url": "{{base_url}}/api/auth/users/{{user_id}}/role",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"ROLE_ADMIN\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Administração (RegisterAdm)",
+      "item": [
+        {
+          "name": "Alunos",
+          "item": [
+            {
+              "name": "Listar alunos",
+              "request": { "method": "GET", "url": "{{base_url}}/admin/alunos" }
+            },
+            {
+              "name": "Cadastrar aluno",
+              "request": {
+                "method": "POST",
+                "url": "{{base_url}}/admin/alunos",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"matricula\": \"2023001\",\n  \"nome\": \"Maria Souza\",\n  \"email\": \"maria@furb.br\",\n  \"telefone\": \"47999999999\",\n  \"rotaTransporte\": \"Rota 1\",\n  \"cursoId\": 1,\n  \"nomeCurso\": \"Ciência da Computação\",\n  \"faculdade\": \"FURB\",\n  \"confirmouPresenca\": false\n}"
+                }
+              }
+            },
+            {
+              "name": "Atualizar presença do aluno",
+              "request": {
+                "method": "PUT",
+                "url": {
+                  "raw": "{{base_url}}/alunos/{{aluno_id}}/presenca?presente=true",
+                  "query": [{ "key": "presente", "value": "true" }]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Motoristas",
+          "item": [
+            {
+              "name": "Listar motoristas",
+              "request": { "method": "GET", "url": "{{base_url}}/admin/motoristas" }
+            },
+            {
+              "name": "Cadastrar motorista",
+              "request": {
+                "method": "POST",
+                "url": "{{base_url}}/admin/motoristas",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nome\": \"Carlos Motorista\",\n  \"carteiraMotorista\": \"12345678901\"\n}"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Veículos",
+          "item": [
+            {
+              "name": "Listar veículos",
+              "request": { "method": "GET", "url": "{{base_url}}/admin/veiculos" }
+            },
+            {
+              "name": "Cadastrar veículo",
+              "request": {
+                "method": "POST",
+                "url": "{{base_url}}/admin/veiculos",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"placa\": \"ABC-1234\",\n  \"modelo\": \"Ônibus Mercedes\",\n  \"capacidade\": 40\n}"
+                }
+              }
+            },
+            {
+              "name": "Atualizar capacidade",
+              "request": {
+                "method": "PUT",
+                "url": {
+                  "raw": "{{base_url}}/veiculos/{{veiculo_id}}/capacidade?capacidade=45",
+                  "query": [{ "key": "capacidade", "value": "45" }]
+                }
+              }
+            },
+            {
+              "name": "Remover veículo",
+              "request": { "method": "DELETE", "url": "{{base_url}}/veiculos/{{veiculo_id}}" }
+            }
+          ]
+        },
+        {
+          "name": "Eleição (Bully Algorithm)",
+          "item": [
+            {
+              "name": "Iniciar eleição",
+              "request": { "method": "GET", "url": "{{base_url}}/eleicao/iniciar" }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Presença",
+      "item": [
+        {
+          "name": "Alunos",
+          "item": [
+            {
+              "name": "Listar alunos",
+              "request": { "method": "GET", "url": "{{base_url}}/api/v1/alunos" }
+            },
+            {
+              "name": "Buscar por ID",
+              "request": { "method": "GET", "url": "{{base_url}}/api/v1/alunos/{{aluno_id}}" }
+            },
+            {
+              "name": "Buscar por matrícula",
+              "request": { "method": "GET", "url": "{{base_url}}/api/v1/alunos/matricula/2023001" }
+            },
+            {
+              "name": "Buscar por rota",
+              "request": { "method": "GET", "url": "{{base_url}}/api/v1/alunos/rota/Rota%201" }
+            },
+            {
+              "name": "Cadastrar aluno",
+              "request": {
+                "method": "POST",
+                "url": "{{base_url}}/api/v1/alunos",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"matricula\": \"2023001\",\n  \"nome\": \"Maria Souza\",\n  \"email\": \"maria@furb.br\",\n  \"telefone\": \"47999999999\",\n  \"rotaTransporte\": \"Rota 1\",\n  \"cursoId\": 1,\n  \"nomeCurso\": \"Ciência da Computação\",\n  \"faculdade\": \"FURB\",\n  \"ativo\": true\n}"
+                }
+              }
+            },
+            {
+              "name": "Atualizar aluno",
+              "request": {
+                "method": "PUT",
+                "url": "{{base_url}}/api/v1/alunos/{{aluno_id}}",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nome\": \"Maria Souza Atualizada\",\n  \"telefone\": \"47988888888\"\n}"
+                }
+              }
+            },
+            {
+              "name": "Desativar aluno",
+              "request": { "method": "DELETE", "url": "{{base_url}}/api/v1/alunos/{{aluno_id}}" }
+            }
+          ]
+        },
+        {
+          "name": "Cursos",
+          "item": [
+            {
+              "name": "Listar cursos",
+              "request": { "method": "GET", "url": "{{base_url}}/api/v1/cursos" }
+            },
+            {
+              "name": "Buscar por ID",
+              "request": { "method": "GET", "url": "{{base_url}}/api/v1/cursos/{{curso_id}}" }
+            },
+            {
+              "name": "Buscar por código",
+              "request": { "method": "GET", "url": "{{base_url}}/api/v1/cursos/codigo/CC001" }
+            },
+            {
+              "name": "Buscar por nome",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{base_url}}/api/v1/cursos/buscar?nome=Computação",
+                  "query": [{ "key": "nome", "value": "Computação" }]
+                }
+              }
+            },
+            {
+              "name": "Cadastrar curso",
+              "request": {
+                "method": "POST",
+                "url": "{{base_url}}/api/v1/cursos",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"codigo\": \"CC001\",\n  \"nome\": \"Ciência da Computação\",\n  \"descricao\": \"Bacharelado em CC\",\n  \"faculdade\": \"FURB\",\n  \"campus\": \"Blumenau\",\n  \"cargaHoraria\": 3200,\n  \"periodo\": \"Noturno\",\n  \"ativo\": true\n}"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Presenças",
+          "item": [
+            {
+              "name": "Registrar presença",
+              "request": {
+                "method": "POST",
+                "url": "{{base_url}}/api/v1/presencas",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"alunoId\": 1,\n  \"cursoId\": 1,\n  \"dataPresenca\": \"2026-05-31\",\n  \"status\": \"PRESENTE\",\n  \"horaEntrada\": \"18:50\",\n  \"horaSaida\": \"22:30\",\n  \"horasAulaComparecidas\": 4,\n  \"horasAulaTotal\": 4\n}"
+                }
+              }
+            },
+            {
+              "name": "Confirmar presença hoje",
+              "request": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{base_url}}/api/v1/presencas/aluno/{{aluno_id}}/curso/{{curso_id}}/confirmar-hoje?status=PRESENTE",
+                  "query": [{ "key": "status", "value": "PRESENTE" }]
+                }
+              }
+            },
+            {
+              "name": "Registrar ausência",
+              "request": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{base_url}}/api/v1/presencas/aluno/{{aluno_id}}/curso/{{curso_id}}/ausencia?data=2026-05-31&motivo=Doença&justificado=false",
+                  "query": [
+                    { "key": "data", "value": "2026-05-31" },
+                    { "key": "motivo", "value": "Doença" },
+                    { "key": "justificado", "value": "false" }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Listar presenças por período (aluno)",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{base_url}}/api/v1/presencas/aluno/{{aluno_id}}/periodo?dataInicio=2026-05-01&dataFim=2026-05-31",
+                  "query": [
+                    { "key": "dataInicio", "value": "2026-05-01" },
+                    { "key": "dataFim", "value": "2026-05-31" }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Relatório de presença",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{base_url}}/api/v1/presencas/relatorio/aluno/{{aluno_id}}/curso/{{curso_id}}?dataInicio=2026-05-01&dataFim=2026-05-31",
+                  "query": [
+                    { "key": "dataInicio", "value": "2026-05-01" },
+                    { "key": "dataFim", "value": "2026-05-31" }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Justificar falta",
+              "request": {
+                "method": "PUT",
+                "url": {
+                  "raw": "{{base_url}}/api/v1/presencas/{{presenca_id}}/justificar?justificativa=Atestado médico",
+                  "query": [{ "key": "justificativa", "value": "Atestado médico" }]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Relatórios",
+      "item": [
+        {
+          "name": "Relatório mensal",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/relatorios/mensal?ano=2026&mes=5",
+              "query": [
+                { "key": "ano", "value": "2026" },
+                { "key": "mes", "value": "5" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Frequência de um aluno",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/metricas/frequencia/alunos/{{aluno_uuid}}?ano=2026&mes=5",
+              "query": [
+                { "key": "ano", "value": "2026" },
+                { "key": "mes", "value": "5" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Frequência de todos os alunos",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/metricas/frequencia/alunos?ano=2026&mes=5",
+              "query": [
+                { "key": "ano", "value": "2026" },
+                { "key": "mes", "value": "5" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Média diária de KM",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/metricas/km/media-diaria?ano=2026&mes=5",
+              "query": [
+                { "key": "ano", "value": "2026" },
+                { "key": "mes", "value": "5" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "KM por dia",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/metricas/km/por-dia?ano=2026&mes=5",
+              "query": [
+                { "key": "ano", "value": "2026" },
+                { "key": "mes", "value": "5" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Indicadores operacionais",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/indicadores/operacionais?ano=2026&mes=5",
+              "query": [
+                { "key": "ano", "value": "2026" },
+                { "key": "mes", "value": "5" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Sync",
+          "item": [
+            {
+              "name": "Sincronizar presenças",
+              "request": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{base_url}}/api/sync/presencas?dataInicio=2026-05-01&dataFim=2026-05-31",
+                  "query": [
+                    { "key": "dataInicio", "value": "2026-05-01" },
+                    { "key": "dataFim", "value": "2026-05-31" }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Sincronizar rotas",
+              "request": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{base_url}}/api/sync/rotas?dataInicio=2026-05-01&dataFim=2026-05-31",
+                  "query": [
+                    { "key": "dataInicio", "value": "2026-05-01" },
+                    { "key": "dataFim", "value": "2026-05-31" }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Sincronizar alunos",
+              "request": { "method": "POST", "url": "{{base_url}}/api/sync/alunos" }
+            },
+            {
+              "name": "Sincronizar período completo",
+              "request": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{base_url}}/api/sync/periodo?dataInicio=2026-05-01&dataFim=2026-05-31",
+                  "query": [
+                    { "key": "dataInicio", "value": "2026-05-01" },
+                    { "key": "dataFim", "value": "2026-05-31" }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

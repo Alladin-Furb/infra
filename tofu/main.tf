@@ -420,7 +420,7 @@ resource "azurerm_container_app" "presenca_service" {
 
       env {
         name  = "SPRING_DATASOURCE_URL"
-        value = "jdbc:postgresql://presenca-db:5432/${var.presenca_db_name}"
+        value = "jdbc:postgresql://presenca-db:5432/${var.presenca_db_name}?sslmode=disable"
       }
       env {
         name  = "SPRING_DATASOURCE_USERNAME"
@@ -481,6 +481,16 @@ resource "azurerm_container_app" "register_adm_service" {
     value = azurerm_container_registry.main.admin_password
   }
 
+  ingress {
+    external_enabled = false
+    target_port      = 8084
+    transport        = "http"
+    traffic_weight {
+      latest_revision = true
+      percentage      = 100
+    }
+  }
+
   template {
     container {
       name   = "register-adm-service"
@@ -534,7 +544,7 @@ resource "azurerm_container_app" "relatorio_service" {
 
   ingress {
     external_enabled = false
-    target_port      = 8083
+    target_port      = 8080
     transport        = "http"
     traffic_weight {
       latest_revision = true
@@ -551,7 +561,7 @@ resource "azurerm_container_app" "relatorio_service" {
 
       env {
         name  = "ConnectionStrings__RelatoriosDb"
-        value = "Host=relatorio-db;Port=5432;Database=${var.relatorio_db_name};Username=${var.relatorio_db_user};Password=${var.relatorio_db_password}"
+        value = "Host=relatorio-db;Port=5432;Database=${var.relatorio_db_name};Username=${var.relatorio_db_user};Password=${var.relatorio_db_password};SSL Mode=Disable"
       }
       env {
         name  = "PresencaService__BaseUrl"
