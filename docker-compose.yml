@@ -34,7 +34,7 @@ services:
       retries: 5
 
   auth-service:
-    image: ${DOCKERHUB_USERNAME}/auth-service:latest
+    image: ${ACR_LOGIN_SERVER}/auth-service:latest
     container_name: auth-service
     environment:
       SPRING_DATASOURCE_URL: jdbc:mariadb://mariadb:3306/${DB_NAME}
@@ -49,7 +49,7 @@ services:
         condition: service_healthy
 
   api-gateway:
-    image: ${DOCKERHUB_USERNAME}/api-gateway:latest
+    image: ${ACR_LOGIN_SERVER}/api-gateway:latest
     container_name: api-gateway
     ports:
       - "8080:8080"
@@ -80,7 +80,7 @@ services:
       retries: 5
 
   presenca-service:
-    image: ${DOCKERHUB_USERNAME}/presenca-service:latest
+    image: ${ACR_LOGIN_SERVER}/presenca-service:latest
     container_name: presenca-service
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://presenca-db:5432/${PRESENCA_DB_NAME}
@@ -100,7 +100,7 @@ services:
         condition: service_healthy
 
   register-adm-service:
-    image: ${DOCKERHUB_USERNAME}/register-adm-service:latest
+    image: ${ACR_LOGIN_SERVER}/register-adm-service:latest
     container_name: register-adm-service
     environment:
       RABBITMQ_HOST: rabbitmq
@@ -131,7 +131,7 @@ services:
       retries: 5
 
   relatorio-service:
-    image: ${DOCKERHUB_USERNAME}/relatorio-service:latest
+    image: ${ACR_LOGIN_SERVER}/relatorio-service:latest
     container_name: relatorio-service
     environment:
       ConnectionStrings__RelatoriosDb: Host=relatorio-db;Port=5432;Database=${RELATORIO_DB_NAME};Username=${RELATORIO_DB_USER};Password=${RELATORIO_DB_PASSWORD}

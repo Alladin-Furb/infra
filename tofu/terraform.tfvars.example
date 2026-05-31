@@ -1,0 +1,40 @@
+# ─── Azure Auth ───────────────────────────────────────────────────────────────
+# Antes do tofu apply, rode:
+#   az login
+#   az account set --subscription <subscription_id>
+subscription_id = "00000000-0000-0000-0000-000000000000"
+tenant_id       = "00000000-0000-0000-0000-000000000000"
+
+# ─── Infraestrutura ───────────────────────────────────────────────────────────
+location            = "brazilsouth"
+resource_group_name = "infra-rg"
+
+# ─── ACR e Storage ────────────────────────────────────────────────────────────
+# Nomes globalmente únicos no Azure (só letras/números, sem hífens)
+acr_name             = "meuprojetoacr"
+storage_account_name = "meuprojetodbst"
+
+# ─── MariaDB / auth-service ───────────────────────────────────────────────────
+# Gerar com: openssl rand -base64 32
+db_root_password = "troque-esta-senha"
+db_name          = "auth_db"
+db_user          = "app_user"
+db_password      = "troque-esta-senha"
+
+# Gerar com: openssl rand -base64 48
+jwt_secret     = "troque-este-segredo"
+jwt_expiration = 3600000
+
+# ─── PostgreSQL / presenca-service ────────────────────────────────────────────
+presenca_db_name     = "presenca_db"
+presenca_db_user     = "presenca_user"
+presenca_db_password = "troque-esta-senha"
+
+# ─── PostgreSQL / relatorio-service ───────────────────────────────────────────
+relatorio_db_name     = "relatorio_db"
+relatorio_db_user     = "relatorio_user"
+relatorio_db_password = "troque-esta-senha"
+
+# ─── RabbitMQ ─────────────────────────────────────────────────────────────────
+rabbitmq_username = "rabbitmq"
+rabbitmq_password = "troque-esta-senha"
