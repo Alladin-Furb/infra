@@ -637,6 +637,18 @@ resource "azurerm_container_app" "api_gateway" {
         value = "http://auth-service"
       }
       env {
+        name  = "PRESENCA_SERVICE_URL"
+        value = "http://presenca-service"
+      }
+      env {
+        name  = "RELATORIO_SERVICE_URL"
+        value = "http://relatorio-service"
+      }
+      env {
+        name  = "REGISTER_ADM_SERVICE_URL"
+        value = "http://register-adm-service"
+      }
+      env {
         name  = "JWT_SECRET"
         value = var.jwt_secret
       }
