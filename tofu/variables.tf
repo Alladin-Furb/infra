@@ -1,5 +1,4 @@
 # ─── Azure Auth ───────────────────────────────────────────────────────────────
-# Autenticação via Azure CLI (az login). Não precisa de Service Principal.
 
 variable "subscription_id" {
   type        = string
@@ -14,15 +13,13 @@ variable "tenant_id" {
 # ─── Infraestrutura ───────────────────────────────────────────────────────────
 
 variable "location" {
-  type        = string
-  default     = "brazilsouth"
-  description = "Região Azure."
+  type    = string
+  default = "brazilsouth"
 }
 
 variable "resource_group_name" {
-  type        = string
-  default     = "infra-rg"
-  description = "Nome do Resource Group."
+  type    = string
+  default = "infra-rg"
 }
 
 # ─── ACR ──────────────────────────────────────────────────────────────────────
@@ -32,23 +29,11 @@ variable "acr_name" {
   description = "Nome do Azure Container Registry (global único, só alfanumérico)."
 }
 
-# ─── Storage Account ──────────────────────────────────────────────────────────
+# ─── auth-service ─────────────────────────────────────────────────────────────
 
-variable "storage_account_name" {
+variable "auth_db_url" {
   type        = string
-  description = "Nome da Storage Account para volumes dos bancos (global único, só letras/números, 3-24 chars)."
-}
-
-# ─── Stack — auth-service / MariaDB ──────────────────────────────────────────
-
-variable "db_root_password" {
-  type      = string
-  sensitive = true
-}
-
-variable "db_name" {
-  type    = string
-  default = "auth_db"
+  description = "JDBC URL do banco da auth-service. Ex: jdbc:mariadb://host:3306/auth_db"
 }
 
 variable "db_user" {
@@ -62,9 +47,8 @@ variable "db_password" {
 }
 
 variable "jwt_secret" {
-  type        = string
-  sensitive   = true
-  description = "Segredo JWT (mínimo 32 bytes em base64)."
+  type      = string
+  sensitive = true
 }
 
 variable "jwt_expiration" {
@@ -72,11 +56,11 @@ variable "jwt_expiration" {
   default = 3600000
 }
 
-# ─── Stack — presenca-service / PostgreSQL ────────────────────────────────────
+# ─── presenca-service ─────────────────────────────────────────────────────────
 
-variable "presenca_db_name" {
-  type    = string
-  default = "presenca_db"
+variable "presenca_db_url" {
+  type        = string
+  description = "JDBC URL do banco da presenca-service. Ex: jdbc:postgresql://host:5432/presenca_db?sslmode=disable"
 }
 
 variable "presenca_db_user" {
@@ -89,24 +73,24 @@ variable "presenca_db_password" {
   sensitive = true
 }
 
-# ─── Stack — relatorio-service / PostgreSQL ───────────────────────────────────
+# ─── relatorio-service ────────────────────────────────────────────────────────
 
-variable "relatorio_db_name" {
-  type    = string
-  default = "relatorio_db"
+variable "relatorio_db_url" {
+  type        = string
+  description = "Connection string do banco da relatorio-service. Ex: Host=host;Port=5432;Database=relatorio_db;Username=relatorio_user;Password=...;SSL Mode=Disable"
 }
 
-variable "relatorio_db_user" {
-  type    = string
-  default = "relatorio_user"
+# ─── RabbitMQ ─────────────────────────────────────────────────────────────────
+
+variable "rabbitmq_host" {
+  type        = string
+  description = "Hostname do RabbitMQ externo."
 }
 
-variable "relatorio_db_password" {
-  type      = string
-  sensitive = true
+variable "rabbitmq_port" {
+  type    = number
+  default = 5672
 }
-
-# ─── Stack — RabbitMQ ─────────────────────────────────────────────────────────
 
 variable "rabbitmq_username" {
   type    = string

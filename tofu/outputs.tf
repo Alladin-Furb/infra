@@ -5,7 +5,7 @@ output "acr_login_server" {
 
 output "acr_username" {
   value       = azurerm_container_registry.main.admin_username
-  description = "Admin username do ACR — valor do secret ACR_USERNAME no GitHub."
+  description = "Admin username do ACR."
 }
 
 output "acr_password" {
@@ -17,4 +17,9 @@ output "acr_password" {
 output "api_url" {
   value       = "https://${azurerm_container_app.api_gateway.ingress[0].fqdn}"
   description = "URL pública da API Gateway."
+}
+
+output "deploy_webhook_url" {
+  value       = "https://${azurerm_container_app.deploy_webhook.ingress[0].fqdn}"
+  description = "URL do webhook de deploy automático."
 }

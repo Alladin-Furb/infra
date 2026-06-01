@@ -15,306 +15,12 @@ resource "azurerm_container_registry" "main" {
   admin_enabled       = true
 }
 
-# ─── Storage para dados persistentes (Azure Files) ────────────────────────────
-
-resource "azurerm_storage_account" "main" {
-  name                     = var.storage_account_name
-  resource_group_name      = azurerm_resource_group.main.name
-  location                 = azurerm_resource_group.main.location
-  account_tier             = "Standard"
-  account_replication_type = "LRS"
-}
-
-resource "azurerm_storage_share" "mariadb" {
-  name               = "mariadb-data"
-  storage_account_id = azurerm_storage_account.main.id
-  quota              = 10
-}
-
-resource "azurerm_storage_share" "presenca_db" {
-  name               = "presenca-db-data"
-  storage_account_id = azurerm_storage_account.main.id
-  quota              = 10
-}
-
-resource "azurerm_storage_share" "relatorio_db" {
-  name               = "relatorio-db-data"
-  storage_account_id = azurerm_storage_account.main.id
-  quota              = 10
-}
-
-resource "azurerm_storage_share" "rabbitmq" {
-  name               = "rabbitmq-data"
-  storage_account_id = azurerm_storage_account.main.id
-  quota              = 5
-}
-
 # ─── Container Apps Environment ───────────────────────────────────────────────
 
 resource "azurerm_container_app_environment" "main" {
   name                = "infra-env"
   resource_group_name = azurerm_resource_group.main.name
   location            = azurerm_resource_group.main.location
-}
-
-resource "azurerm_container_app_environment_storage" "mariadb" {
-  name                         = "mariadb-storage"
-  container_app_environment_id = azurerm_container_app_environment.main.id
-  account_name                 = azurerm_storage_account.main.name
-  share_name                   = azurerm_storage_share.mariadb.name
-  access_key                   = azurerm_storage_account.main.primary_access_key
-  access_mode                  = "ReadWrite"
-}
-
-resource "azurerm_container_app_environment_storage" "presenca_db" {
-  name                         = "presenca-db-storage"
-  container_app_environment_id = azurerm_container_app_environment.main.id
-  account_name                 = azurerm_storage_account.main.name
-  share_name                   = azurerm_storage_share.presenca_db.name
-  access_key                   = azurerm_storage_account.main.primary_access_key
-  access_mode                  = "ReadWrite"
-}
-
-resource "azurerm_container_app_environment_storage" "relatorio_db" {
-  name                         = "relatorio-db-storage"
-  container_app_environment_id = azurerm_container_app_environment.main.id
-  account_name                 = azurerm_storage_account.main.name
-  share_name                   = azurerm_storage_share.relatorio_db.name
-  access_key                   = azurerm_storage_account.main.primary_access_key
-  access_mode                  = "ReadWrite"
-}
-
-resource "azurerm_container_app_environment_storage" "rabbitmq" {
-  name                         = "rabbitmq-storage"
-  container_app_environment_id = azurerm_container_app_environment.main.id
-  account_name                 = azurerm_storage_account.main.name
-  share_name                   = azurerm_storage_share.rabbitmq.name
-  access_key                   = azurerm_storage_account.main.primary_access_key
-  access_mode                  = "ReadWrite"
-}
-
-# ─── MariaDB ──────────────────────────────────────────────────────────────────
-
-resource "azurerm_container_app" "mariadb" {
-  name                         = "mariadb"
-  container_app_environment_id = azurerm_container_app_environment.main.id
-  resource_group_name          = azurerm_resource_group.main.name
-  revision_mode                = "Single"
-
-  ingress {
-    external_enabled = false
-    exposed_port     = 3306
-    target_port      = 3306
-    transport        = "tcp"
-    traffic_weight {
-      latest_revision = true
-      percentage      = 100
-    }
-  }
-
-  template {
-    container {
-      name   = "mariadb"
-      image  = "mariadb:11.2"
-      cpu    = 0.5
-      memory = "1Gi"
-
-      env {
-        name  = "MYSQL_ROOT_PASSWORD"
-        value = var.db_root_password
-      }
-      env {
-        name  = "MYSQL_DATABASE"
-        value = var.db_name
-      }
-      env {
-        name  = "MYSQL_USER"
-        value = var.db_user
-      }
-      env {
-        name  = "MYSQL_PASSWORD"
-        value = var.db_password
-      }
-
-      volume_mounts {
-        name = "mariadb-data"
-        path = "/var/lib/mysql"
-      }
-    }
-
-    volume {
-      name         = "mariadb-data"
-      storage_type = "AzureFile"
-      storage_name = azurerm_container_app_environment_storage.mariadb.name
-    }
-
-    min_replicas = 1
-    max_replicas = 1
-  }
-}
-
-# ─── RabbitMQ ─────────────────────────────────────────────────────────────────
-
-resource "azurerm_container_app" "rabbitmq" {
-  name                         = "rabbitmq"
-  container_app_environment_id = azurerm_container_app_environment.main.id
-  resource_group_name          = azurerm_resource_group.main.name
-  revision_mode                = "Single"
-
-  ingress {
-    external_enabled = false
-    exposed_port     = 5672
-    target_port      = 5672
-    transport        = "tcp"
-    traffic_weight {
-      latest_revision = true
-      percentage      = 100
-    }
-  }
-
-  template {
-    container {
-      name   = "rabbitmq"
-      image  = "rabbitmq:3.13-management"
-      cpu    = 0.5
-      memory = "1Gi"
-
-      env {
-        name  = "RABBITMQ_DEFAULT_USER"
-        value = var.rabbitmq_username
-      }
-      env {
-        name  = "RABBITMQ_DEFAULT_PASS"
-        value = var.rabbitmq_password
-      }
-
-      volume_mounts {
-        name = "rabbitmq-data"
-        path = "/var/lib/rabbitmq"
-      }
-    }
-
-    volume {
-      name         = "rabbitmq-data"
-      storage_type = "AzureFile"
-      storage_name = azurerm_container_app_environment_storage.rabbitmq.name
-    }
-
-    min_replicas = 1
-    max_replicas = 1
-  }
-}
-
-# ─── presenca-db ──────────────────────────────────────────────────────────────
-
-resource "azurerm_container_app" "presenca_db" {
-  name                         = "presenca-db"
-  container_app_environment_id = azurerm_container_app_environment.main.id
-  resource_group_name          = azurerm_resource_group.main.name
-  revision_mode                = "Single"
-
-  ingress {
-    external_enabled = false
-    exposed_port     = 5432
-    target_port      = 5432
-    transport        = "tcp"
-    traffic_weight {
-      latest_revision = true
-      percentage      = 100
-    }
-  }
-
-  template {
-    container {
-      name   = "presenca-db"
-      image  = "postgres:17"
-      cpu    = 0.5
-      memory = "1Gi"
-
-      env {
-        name  = "POSTGRES_DB"
-        value = var.presenca_db_name
-      }
-      env {
-        name  = "POSTGRES_USER"
-        value = var.presenca_db_user
-      }
-      env {
-        name  = "POSTGRES_PASSWORD"
-        value = var.presenca_db_password
-      }
-
-      volume_mounts {
-        name = "presenca-db-data"
-        path = "/var/lib/postgresql/data"
-      }
-    }
-
-    volume {
-      name         = "presenca-db-data"
-      storage_type = "AzureFile"
-      storage_name = azurerm_container_app_environment_storage.presenca_db.name
-    }
-
-    min_replicas = 1
-    max_replicas = 1
-  }
-}
-
-# ─── relatorio-db ─────────────────────────────────────────────────────────────
-
-resource "azurerm_container_app" "relatorio_db" {
-  name                         = "relatorio-db"
-  container_app_environment_id = azurerm_container_app_environment.main.id
-  resource_group_name          = azurerm_resource_group.main.name
-  revision_mode                = "Single"
-
-  ingress {
-    external_enabled = false
-    exposed_port     = 5432
-    target_port      = 5432
-    transport        = "tcp"
-    traffic_weight {
-      latest_revision = true
-      percentage      = 100
-    }
-  }
-
-  template {
-    container {
-      name   = "relatorio-db"
-      image  = "postgres:17"
-      cpu    = 0.5
-      memory = "1Gi"
-
-      env {
-        name  = "POSTGRES_DB"
-        value = var.relatorio_db_name
-      }
-      env {
-        name  = "POSTGRES_USER"
-        value = var.relatorio_db_user
-      }
-      env {
-        name  = "POSTGRES_PASSWORD"
-        value = var.relatorio_db_password
-      }
-
-      volume_mounts {
-        name = "relatorio-db-data"
-        path = "/var/lib/postgresql/data"
-      }
-    }
-
-    volume {
-      name         = "relatorio-db-data"
-      storage_type = "AzureFile"
-      storage_name = azurerm_container_app_environment_storage.relatorio_db.name
-    }
-
-    min_replicas = 1
-    max_replicas = 1
-  }
 }
 
 # ─── auth-service ─────────────────────────────────────────────────────────────
@@ -355,7 +61,7 @@ resource "azurerm_container_app" "auth_service" {
 
       env {
         name  = "SPRING_DATASOURCE_URL"
-        value = "jdbc:mariadb://mariadb:3306/${var.db_name}"
+        value = var.auth_db_url
       }
       env {
         name  = "SPRING_DATASOURCE_USERNAME"
@@ -375,11 +81,9 @@ resource "azurerm_container_app" "auth_service" {
       }
     }
 
-    min_replicas = 1
+    min_replicas = 0
     max_replicas = 3
   }
-
-  depends_on = [azurerm_container_app.mariadb]
 }
 
 # ─── presenca-service ─────────────────────────────────────────────────────────
@@ -420,7 +124,7 @@ resource "azurerm_container_app" "presenca_service" {
 
       env {
         name  = "SPRING_DATASOURCE_URL"
-        value = "jdbc:postgresql://presenca-db:5432/${var.presenca_db_name}?sslmode=disable"
+        value = var.presenca_db_url
       }
       env {
         name  = "SPRING_DATASOURCE_USERNAME"
@@ -436,11 +140,11 @@ resource "azurerm_container_app" "presenca_service" {
       }
       env {
         name  = "RABBITMQ_HOST"
-        value = "rabbitmq"
+        value = var.rabbitmq_host
       }
       env {
         name  = "RABBITMQ_PORT"
-        value = "5672"
+        value = tostring(var.rabbitmq_port)
       }
       env {
         name  = "RABBITMQ_USERNAME"
@@ -452,14 +156,9 @@ resource "azurerm_container_app" "presenca_service" {
       }
     }
 
-    min_replicas = 1
+    min_replicas = 0
     max_replicas = 3
   }
-
-  depends_on = [
-    azurerm_container_app.presenca_db,
-    azurerm_container_app.rabbitmq,
-  ]
 }
 
 # ─── register-adm-service ─────────────────────────────────────────────────────
@@ -500,11 +199,11 @@ resource "azurerm_container_app" "register_adm_service" {
 
       env {
         name  = "RABBITMQ_HOST"
-        value = "rabbitmq"
+        value = var.rabbitmq_host
       }
       env {
         name  = "RABBITMQ_PORT"
-        value = "5672"
+        value = tostring(var.rabbitmq_port)
       }
       env {
         name  = "RABBITMQ_USERNAME"
@@ -516,11 +215,9 @@ resource "azurerm_container_app" "register_adm_service" {
       }
     }
 
-    min_replicas = 1
+    min_replicas = 0
     max_replicas = 3
   }
-
-  depends_on = [azurerm_container_app.rabbitmq]
 }
 
 # ─── relatorio-service ────────────────────────────────────────────────────────
@@ -561,7 +258,7 @@ resource "azurerm_container_app" "relatorio_service" {
 
       env {
         name  = "ConnectionStrings__RelatoriosDb"
-        value = "Host=relatorio-db;Port=5432;Database=${var.relatorio_db_name};Username=${var.relatorio_db_user};Password=${var.relatorio_db_password};SSL Mode=Disable"
+        value = var.relatorio_db_url
       }
       env {
         name  = "PresencaService__BaseUrl"
@@ -569,11 +266,11 @@ resource "azurerm_container_app" "relatorio_service" {
       }
       env {
         name  = "RabbitMQ__Host"
-        value = "rabbitmq"
+        value = var.rabbitmq_host
       }
       env {
         name  = "RabbitMQ__Port"
-        value = "5672"
+        value = tostring(var.rabbitmq_port)
       }
       env {
         name  = "RabbitMQ__Username"
@@ -585,15 +282,9 @@ resource "azurerm_container_app" "relatorio_service" {
       }
     }
 
-    min_replicas = 1
+    min_replicas = 0
     max_replicas = 3
   }
-
-  depends_on = [
-    azurerm_container_app.relatorio_db,
-    azurerm_container_app.rabbitmq,
-    azurerm_container_app.presenca_service,
-  ]
 }
 
 # ─── api-gateway ──────────────────────────────────────────────────────────────
@@ -654,9 +345,85 @@ resource "azurerm_container_app" "api_gateway" {
       }
     }
 
-    min_replicas = 1
+    min_replicas = 0
     max_replicas = 3
   }
+}
 
-  depends_on = [azurerm_container_app.auth_service]
+# ─── deploy-webhook ───────────────────────────────────────────────────────────
+
+resource "azurerm_container_app" "deploy_webhook" {
+  name                         = "deploy-webhook"
+  container_app_environment_id = azurerm_container_app_environment.main.id
+  resource_group_name          = azurerm_resource_group.main.name
+  revision_mode                = "Single"
+
+  registry {
+    server               = azurerm_container_registry.main.login_server
+    username             = azurerm_container_registry.main.admin_username
+    password_secret_name = "acr-password"
+  }
+
+  secret {
+    name  = "acr-password"
+    value = azurerm_container_registry.main.admin_password
+  }
+
+  identity {
+    type         = "UserAssigned"
+    identity_ids = [azurerm_user_assigned_identity.deploy.id]
+  }
+
+  ingress {
+    external_enabled = true
+    target_port      = 8080
+    transport        = "http"
+    traffic_weight {
+      latest_revision = true
+      percentage      = 100
+    }
+  }
+
+  template {
+    container {
+      name   = "deploy-webhook"
+      image  = "${azurerm_container_registry.main.login_server}/deploy-webhook:latest"
+      cpu    = 0.25
+      memory = "0.5Gi"
+
+      env {
+        name  = "ACR_SERVER"
+        value = azurerm_container_registry.main.login_server
+      }
+      env {
+        name  = "RESOURCE_GROUP"
+        value = var.resource_group_name
+      }
+      env {
+        name  = "AZURE_CLIENT_ID"
+        value = azurerm_user_assigned_identity.deploy.client_id
+      }
+      env {
+        name  = "AZURE_SUBSCRIPTION_ID"
+        value = var.subscription_id
+      }
+    }
+
+    min_replicas = 1
+    max_replicas = 1
+  }
+}
+
+# ─── Managed Identity para deploy-webhook ─────────────────────────────────────
+
+resource "azurerm_user_assigned_identity" "deploy" {
+  name                = "deploy-identity"
+  resource_group_name = azurerm_resource_group.main.name
+  location            = azurerm_resource_group.main.location
+}
+
+resource "azurerm_role_assignment" "deploy_contributor" {
+  scope                = azurerm_resource_group.main.id
+  role_definition_name = "Contributor"
+  principal_id         = azurerm_user_assigned_identity.deploy.principal_id
 }
