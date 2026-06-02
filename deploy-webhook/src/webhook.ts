@@ -51,8 +51,16 @@ const server = http.createServer((req, res) => {
       const body = JSON.parse(Buffer.concat(chunks).toString());
       const target = (body?.target ?? {}) as Record<string, string>;
       const repo = target.repository ?? '';
-      const tag = target.tag || 'latest';
+      const tag = target.tag ?? '';
       res.writeHead(202).end();
+      // CI publishes two tags per build (`latest` + `sha-<short>`), so two push
+      // events arrive for the same digest. Act only on the immutable `sha-*` tag:
+      // it is unique per commit, guaranteeing a fresh revision. Skipping `latest`
+      // avoids the no-op redeploy (same image reference) and the duplicate deploy.
+      if (!tag.startsWith('sha-')) {
+        console.log(`[skip] ${repo}: tag '${tag}' is not sha-*, ignoring`);
+        return;
+      }
       deploy(repo, tag).catch(console.error);
     } catch {
       res.writeHead(400).end();
