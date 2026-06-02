@@ -12,25 +12,28 @@ resource_group_name = "infra-rg"
 # Nome global único no Azure (só letras/números, sem hífens)
 acr_name = "meuprojetoacr"
 
+# ─── Storage (Azure Files — persistência dos bancos) ──────────────────────────
+# Global único, 3-24 chars, só letras minúsculas e números
+storage_account_name = "meuprojetodb"
+
 # ─── auth-service / MariaDB ───────────────────────────────────────────────────
-# Host externo onde o banco roda (VM, managed DB, etc.)
-auth_db_url = "jdbc:mariadb://SEU_HOST:3306/auth_db"
-db_user     = "app_user"
-db_password = "troque-esta-senha"
+db_name          = "auth_db"
+db_user          = "app_user"
+db_password      = "troque-esta-senha"
+db_root_password = "troque-a-senha-root"
 
 jwt_secret     = "troque-este-segredo-minimo-32-bytes"
 jwt_expiration = 3600000
 
 # ─── presenca-service / PostgreSQL ────────────────────────────────────────────
-presenca_db_url      = "jdbc:postgresql://SEU_HOST:5432/presenca_db?sslmode=disable"
+presenca_db_name     = "presenca_db"
 presenca_db_user     = "presenca_user"
 presenca_db_password = "troque-esta-senha"
 
 # ─── relatorio-service / PostgreSQL ───────────────────────────────────────────
-relatorio_db_url = "Host=SEU_HOST;Port=5432;Database=relatorio_db;Username=relatorio_user;Password=troque;SSL Mode=Disable"
+relatorio_db_name     = "transporte_escolar_relatorios"
+relatorio_db_user     = "relatorio_user"
+relatorio_db_password = "troque-esta-senha"
 
-# ─── RabbitMQ ─────────────────────────────────────────────────────────────────
-rabbitmq_host     = "SEU_HOST"
-rabbitmq_port     = 5672
-rabbitmq_username = "rabbitmq"
-rabbitmq_password = "troque-esta-senha"
+# ─── RabbitMQ (CloudAMQP — serviço externo) ───────────────────────────────────
+rabbitmq_url = "amqps://usuario:senha@host.rmq.cloudamqp.com/vhost"

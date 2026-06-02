@@ -29,11 +29,18 @@ variable "acr_name" {
   description = "Nome do Azure Container Registry (global único, só alfanumérico)."
 }
 
-# ─── auth-service ─────────────────────────────────────────────────────────────
+# ─── Storage (persistência dos bancos via Azure Files) ────────────────────────
 
-variable "auth_db_url" {
+variable "storage_account_name" {
   type        = string
-  description = "JDBC URL do banco da auth-service. Ex: jdbc:mariadb://host:3306/auth_db"
+  description = "Nome da Storage Account (global único, 3-24 chars, só letras minúsculas e números)."
+}
+
+# ─── auth-service / MariaDB ───────────────────────────────────────────────────
+
+variable "db_name" {
+  type    = string
+  default = "auth_db"
 }
 
 variable "db_user" {
@@ -46,6 +53,12 @@ variable "db_password" {
   sensitive = true
 }
 
+variable "db_root_password" {
+  type        = string
+  sensitive   = true
+  description = "Senha root do MariaDB."
+}
+
 variable "jwt_secret" {
   type      = string
   sensitive = true
@@ -56,11 +69,11 @@ variable "jwt_expiration" {
   default = 3600000
 }
 
-# ─── presenca-service ─────────────────────────────────────────────────────────
+# ─── presenca-service / PostgreSQL ────────────────────────────────────────────
 
-variable "presenca_db_url" {
-  type        = string
-  description = "JDBC URL do banco da presenca-service. Ex: jdbc:postgresql://host:5432/presenca_db?sslmode=disable"
+variable "presenca_db_name" {
+  type    = string
+  default = "presenca_db"
 }
 
 variable "presenca_db_user" {
@@ -73,31 +86,27 @@ variable "presenca_db_password" {
   sensitive = true
 }
 
-# ─── relatorio-service ────────────────────────────────────────────────────────
+# ─── relatorio-service / PostgreSQL ───────────────────────────────────────────
 
-variable "relatorio_db_url" {
-  type        = string
-  description = "Connection string do banco da relatorio-service. Ex: Host=host;Port=5432;Database=relatorio_db;Username=relatorio_user;Password=...;SSL Mode=Disable"
-}
-
-# ─── RabbitMQ ─────────────────────────────────────────────────────────────────
-
-variable "rabbitmq_host" {
-  type        = string
-  description = "Hostname do RabbitMQ externo."
-}
-
-variable "rabbitmq_port" {
-  type    = number
-  default = 5672
-}
-
-variable "rabbitmq_username" {
+variable "relatorio_db_name" {
   type    = string
-  default = "rabbitmq"
+  default = "transporte_escolar_relatorios"
 }
 
-variable "rabbitmq_password" {
+variable "relatorio_db_user" {
+  type    = string
+  default = "relatorio_user"
+}
+
+variable "relatorio_db_password" {
   type      = string
   sensitive = true
+}
+
+# ─── RabbitMQ (CloudAMQP — serviço externo) ───────────────────────────────────
+
+variable "rabbitmq_url" {
+  type        = string
+  sensitive   = true
+  description = "URL AMQPS do CloudAMQP. Ex: amqps://user:pass@host.rmq.cloudamqp.com/vhost"
 }
