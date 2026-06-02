@@ -514,7 +514,7 @@ resource "azurerm_container_app" "relatorio_service" {
 
       env {
         name  = "ConnectionStrings__RelatoriosDb"
-        value = "Server=relatorio-db;Port=3306;Database=${var.relatorio_db_name};User Id=${var.relatorio_db_user};Password=${var.relatorio_db_password};SslMode=None"
+        value = "Server=relatorio-db;Port=3306;Database=${var.relatorio_db_name};User Id=${var.relatorio_db_user};Password=${var.relatorio_db_password};SslMode=Disabled"
       }
       env {
         name  = "PresencaService__BaseUrl"
