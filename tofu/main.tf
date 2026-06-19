@@ -590,6 +590,48 @@ resource "azurerm_container_app" "api_gateway" {
   }
 }
 
+# ─── route-generator ──────────────────────────────────────────────────────────
+
+resource "azurerm_container_app" "route_generator" {
+  name                         = "route-generator"
+  container_app_environment_id = azurerm_container_app_environment.main.id
+  resource_group_name          = azurerm_resource_group.main.name
+  revision_mode                = "Single"
+
+  registry {
+    server               = azurerm_container_registry.main.login_server
+    username             = azurerm_container_registry.main.admin_username
+    password_secret_name = "acr-password"
+  }
+
+  secret {
+    name  = "acr-password"
+    value = azurerm_container_registry.main.admin_password
+  }
+
+  ingress {
+    external_enabled = false
+    target_port      = 5001
+    transport        = "http2"
+    traffic_weight {
+      latest_revision = true
+      percentage      = 100
+    }
+  }
+
+  template {
+    container {
+      name   = "route-generator"
+      image  = "${azurerm_container_registry.main.login_server}/route-generator:latest"
+      cpu    = 0.5
+      memory = "1Gi"
+    }
+
+    min_replicas = 0
+    max_replicas = 3
+  }
+}
+
 # ─── deploy-webhook ───────────────────────────────────────────────────────────
 
 resource "azurerm_container_app" "deploy_webhook" {
@@ -666,4 +708,31 @@ resource "azurerm_role_assignment" "deploy_contributor" {
   scope                = azurerm_resource_group.main.id
   role_definition_name = "Contributor"
   principal_id         = azurerm_user_assigned_identity.deploy.principal_id
+}
+
+# ─── ACR Webhooks → deploy-webhook ────────────────────────────────────────────
+
+locals {
+  webhook_services = toset([
+    "auth-service",
+    "presenca-service",
+    "register-adm-service",
+    "relatorio-service",
+    "api-gateway",
+    "route-generator",
+  ])
+}
+
+resource "azurerm_container_registry_webhook" "deploy" {
+  for_each = local.webhook_services
+
+  name                = replace(each.key, "-", "")
+  resource_group_name = azurerm_resource_group.main.name
+  registry_name       = azurerm_container_registry.main.name
+  location            = azurerm_resource_group.main.location
+
+  service_uri = "https://${azurerm_container_app.deploy_webhook.ingress[0].fqdn}"
+  status      = "enabled"
+  scope       = "${each.key}:*"
+  actions     = ["push"]
 }
