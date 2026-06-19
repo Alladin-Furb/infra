@@ -14,6 +14,7 @@ const REPO_TO_APP: Record<string, string> = {
   'presenca-service':     'presenca-service',
   'register-adm-service': 'register-adm-service',
   'relatorio-service':    'relatorio-service',
+  'route-generator':      'route-generator',
 };
 
 const credential = new ManagedIdentityCredential(CLIENT_ID ? { clientId: CLIENT_ID } : {});
