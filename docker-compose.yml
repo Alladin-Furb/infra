@@ -44,7 +44,7 @@ services:
           memory: 512M
 
   auth-service:
-    image: ${ACR_LOGIN_SERVER}/auth-service:latest
+    image: auth-service:latest
     container_name: auth-service
     environment:
       SPRING_DATASOURCE_URL: jdbc:mariadb://mariadb:3306/${DB_NAME}
@@ -64,7 +64,7 @@ services:
           memory: 1G
 
   api-gateway:
-    image: ${ACR_LOGIN_SERVER}/api-gateway:latest
+    image: api-gateway:latest
     container_name: api-gateway
     ports:
       - "8080:8080"
@@ -105,7 +105,7 @@ services:
           memory: 512M
 
   presenca-service:
-    image: ${ACR_LOGIN_SERVER}/presenca-service:latest
+    image: presenca-service:latest
     container_name: presenca-service
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://presenca-db:5432/${PRESENCA_DB_NAME}
@@ -130,7 +130,7 @@ services:
           memory: 1G
 
   register-adm-service:
-    image: ${ACR_LOGIN_SERVER}/register-adm-service:latest
+    image: register-adm-service:latest
     container_name: register-adm-service
     environment:
       RABBITMQ_HOST: rabbitmq
@@ -172,7 +172,7 @@ services:
           memory: 512M
 
   relatorio-service:
-    image: ${ACR_LOGIN_SERVER}/relatorio-service:latest
+    image: relatorio-service:latest
     container_name: relatorio-service
     environment:
       ConnectionStrings__RelatoriosDb: Server=relatorio-db;Port=3306;Database=${RELATORIO_DB_NAME};User Id=${RELATORIO_DB_USER};Password=${RELATORIO_DB_PASSWORD};SslMode=None
@@ -217,7 +217,7 @@ services:
           memory: 512M
 
   route-generator:
-    image: ${ACR_LOGIN_SERVER}/route-generator:latest
+    image: route-generator:latest
     container_name: route-generator
     environment:
       ConnectionStrings__DefaultConnection: Host=route-gen-db;Port=5432;Database=${ROUTE_GEN_DB_NAME};Username=${ROUTE_GEN_DB_USER};Password=${ROUTE_GEN_DB_PASSWORD}
