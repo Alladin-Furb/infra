@@ -6,13 +6,14 @@ subscription_id = "00000000-0000-0000-0000-000000000000"
 tenant_id       = "00000000-0000-0000-0000-000000000000"
 
 location            = "brazilsouth"
+environment         = "prod"
 resource_group_name = "infra-rg"
 
 # ─── ACR ──────────────────────────────────────────────────────────────────────
 # Nome global único no Azure (só letras/números, sem hífens)
 acr_name = "meuprojetoacr"
 
-# ─── Storage (Azure Files — persistência dos bancos) ──────────────────────────
+# ─── Storage (Azure Files — persistência dos bancos MariaDB) ──────────────────
 # Global único, 3-24 chars, só letras minúsculas e números
 storage_account_name = "meuprojetodb"
 
@@ -25,15 +26,18 @@ db_root_password = "troque-a-senha-root"
 jwt_secret     = "troque-este-segredo-minimo-32-bytes"
 jwt_expiration = 3600000
 
-# ─── presenca-service / PostgreSQL ────────────────────────────────────────────
-presenca_db_name     = "presenca_db"
-presenca_db_user     = "presenca_user"
-presenca_db_password = "troque-esta-senha"
+# ─── presenca-service / PostgreSQL (provider externo) ────────────────────────
+# JDBC URL completa — obtenha no painel do seu provider (Supabase, Neon, etc.)
+presenca_db_url = "jdbc:postgresql://host:5432/presenca_db?user=presenca_user&password=troque-esta-senha"
 
-# ─── relatorio-service / PostgreSQL ───────────────────────────────────────────
+# ─── relatorio-service / MariaDB ──────────────────────────────────────────────
 relatorio_db_name     = "transporte_escolar_relatorios"
 relatorio_db_user     = "relatorio_user"
 relatorio_db_password = "troque-esta-senha"
+
+# ─── route-generator / PostgreSQL (provider externo) ─────────────────────────
+# Connection string ADO.NET — obtenha no painel do seu provider
+route_gen_db_url = "Host=host;Port=5432;Database=route_gen_db;Username=route_user;Password=troque-esta-senha"
 
 # ─── RabbitMQ (CloudAMQP — serviço externo) ───────────────────────────────────
 rabbitmq_url = "amqps://usuario:senha@host.rmq.cloudamqp.com/vhost"

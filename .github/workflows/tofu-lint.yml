@@ -1,0 +1,42 @@
+name: IaC Lint
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'tofu/**'
+  pull_request:
+    paths:
+      - 'tofu/**'
+
+jobs:
+  tflint:
+    name: tflint
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: opentofu/setup-opentofu@v1
+        with:
+          tofu_version: "1.9.0"
+
+      - name: tofu init
+        working-directory: tofu
+        run: tofu init -backend=false
+
+      - name: tofu validate
+        working-directory: tofu
+        run: tofu validate
+
+      - uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: v0.55.0
+
+      - name: tflint init
+        working-directory: tofu
+        run: tflint --init
+
+      - name: tflint
+        working-directory: tofu
+        run: tflint --format compact

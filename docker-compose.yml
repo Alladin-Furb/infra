@@ -16,6 +16,11 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
 
   rabbitmq:
     image: rabbitmq:3.13-management
@@ -32,6 +37,11 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
 
   auth-service:
     image: ${ACR_LOGIN_SERVER}/auth-service:latest
@@ -47,6 +57,11 @@ services:
     depends_on:
       mariadb:
         condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
 
   api-gateway:
     image: ${ACR_LOGIN_SERVER}/api-gateway:latest
@@ -61,6 +76,11 @@ services:
       - backend
     depends_on:
       - auth-service
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 768M
 
   presenca-db:
     image: postgres:17
@@ -78,6 +98,11 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
 
   presenca-service:
     image: ${ACR_LOGIN_SERVER}/presenca-service:latest
@@ -98,6 +123,11 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
 
   register-adm-service:
     image: ${ACR_LOGIN_SERVER}/register-adm-service:latest
@@ -112,29 +142,40 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
 
   relatorio-db:
-    image: postgres:17
+    image: mariadb:11.2
     container_name: relatorio-db
     environment:
-      POSTGRES_DB: ${RELATORIO_DB_NAME}
-      POSTGRES_USER: ${RELATORIO_DB_USER}
-      POSTGRES_PASSWORD: ${RELATORIO_DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${RELATORIO_DB_PASSWORD}
+      MYSQL_DATABASE: ${RELATORIO_DB_NAME}
+      MYSQL_USER: ${RELATORIO_DB_USER}
+      MYSQL_PASSWORD: ${RELATORIO_DB_PASSWORD}
     volumes:
-      - relatorio-db-data:/var/lib/postgresql/data
+      - relatorio-db-data:/var/lib/mysql
     networks:
       - backend
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "${RELATORIO_DB_USER}", "-d", "${RELATORIO_DB_NAME}"]
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 10s
       timeout: 5s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
 
   relatorio-service:
     image: ${ACR_LOGIN_SERVER}/relatorio-service:latest
     container_name: relatorio-service
     environment:
-      ConnectionStrings__RelatoriosDb: Host=relatorio-db;Port=5432;Database=${RELATORIO_DB_NAME};Username=${RELATORIO_DB_USER};Password=${RELATORIO_DB_PASSWORD}
+      ConnectionStrings__RelatoriosDb: Server=relatorio-db;Port=3306;Database=${RELATORIO_DB_NAME};User Id=${RELATORIO_DB_USER};Password=${RELATORIO_DB_PASSWORD};SslMode=None
       PresencaService__BaseUrl: http://presenca-service:8082
       RabbitMQ__Host: rabbitmq
       RabbitMQ__Port: 5672
@@ -147,6 +188,49 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+
+  route-gen-db:
+    image: postgres:17
+    container_name: route-gen-db
+    environment:
+      POSTGRES_DB: ${ROUTE_GEN_DB_NAME}
+      POSTGRES_USER: ${ROUTE_GEN_DB_USER}
+      POSTGRES_PASSWORD: ${ROUTE_GEN_DB_PASSWORD}
+    volumes:
+      - route-gen-db-data:/var/lib/postgresql/data
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${ROUTE_GEN_DB_USER}", "-d", "${ROUTE_GEN_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+
+  route-generator:
+    image: ${ACR_LOGIN_SERVER}/route-generator:latest
+    container_name: route-generator
+    environment:
+      ConnectionStrings__DefaultConnection: Host=route-gen-db;Port=5432;Database=${ROUTE_GEN_DB_NAME};Username=${ROUTE_GEN_DB_USER};Password=${ROUTE_GEN_DB_PASSWORD}
+    networks:
+      - backend
+    depends_on:
+      route-gen-db:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
 
 networks:
   frontend:
@@ -160,3 +244,4 @@ volumes:
   rabbitmq-data:
   presenca-db-data:
   relatorio-db-data:
+  route-gen-db-data:

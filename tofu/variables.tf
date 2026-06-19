@@ -17,6 +17,12 @@ variable "location" {
   default = "brazilsouth"
 }
 
+variable "environment" {
+  type        = string
+  default     = "prod"
+  description = "Nome do ambiente (dev, staging, prod). Usado no nome do Container App Environment."
+}
+
 variable "resource_group_name" {
   type    = string
   default = "infra-rg"
@@ -27,13 +33,23 @@ variable "resource_group_name" {
 variable "acr_name" {
   type        = string
   description = "Nome do Azure Container Registry (global único, só alfanumérico)."
+
+  validation {
+    condition     = can(regex("^[a-zA-Z0-9]{5,50}$", var.acr_name))
+    error_message = "O nome do ACR deve ter entre 5 e 50 caracteres alfanuméricos (sem hífens ou underscores)."
+  }
 }
 
-# ─── Storage (persistência dos bancos via Azure Files) ────────────────────────
+# ─── Storage (persistência dos bancos MariaDB via Azure Files) ────────────────
 
 variable "storage_account_name" {
   type        = string
   description = "Nome da Storage Account (global único, 3-24 chars, só letras minúsculas e números)."
+
+  validation {
+    condition     = can(regex("^[a-z0-9]{3,24}$", var.storage_account_name))
+    error_message = "O nome da Storage Account deve ter entre 3 e 24 caracteres (letras minúsculas e números apenas, sem hífens)."
+  }
 }
 
 # ─── auth-service / MariaDB ───────────────────────────────────────────────────
@@ -69,24 +85,15 @@ variable "jwt_expiration" {
   default = 3600000
 }
 
-# ─── presenca-service / PostgreSQL ────────────────────────────────────────────
+# ─── presenca-service / PostgreSQL (provider externo) ────────────────────────
 
-variable "presenca_db_name" {
-  type    = string
-  default = "presenca_db"
+variable "presenca_db_url" {
+  type        = string
+  sensitive   = true
+  description = "JDBC URL completa do PostgreSQL externo. Ex: jdbc:postgresql://host:5432/db?user=u&password=p"
 }
 
-variable "presenca_db_user" {
-  type    = string
-  default = "presenca_user"
-}
-
-variable "presenca_db_password" {
-  type      = string
-  sensitive = true
-}
-
-# ─── relatorio-service / PostgreSQL ───────────────────────────────────────────
+# ─── relatorio-service / MariaDB ──────────────────────────────────────────────
 
 variable "relatorio_db_name" {
   type    = string
@@ -101,6 +108,14 @@ variable "relatorio_db_user" {
 variable "relatorio_db_password" {
   type      = string
   sensitive = true
+}
+
+# ─── route-generator / PostgreSQL (provider externo) ─────────────────────────
+
+variable "route_gen_db_url" {
+  type        = string
+  sensitive   = true
+  description = "Connection string ADO.NET do PostgreSQL externo. Ex: Host=h;Port=5432;Database=db;Username=u;Password=p"
 }
 
 # ─── RabbitMQ (CloudAMQP — serviço externo) ───────────────────────────────────

@@ -7,8 +7,9 @@ const RG = process.env.RESOURCE_GROUP ?? 'infra-rg';
 const ACR = process.env.ACR_SERVER ?? 'transporteescolarcs.azurecr.io';
 const CLIENT_ID = process.env.AZURE_CLIENT_ID;
 const PORT = parseInt(process.env.PORT ?? '8080', 10);
+const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET ?? '';
 
-const REPO_TO_APP: Record<string, string> = {
+const DEFAULT_REPO_TO_APP: Record<string, string> = {
   'api-gateway':          'api-gateway',
   'auth-service':         'auth-service',
   'presenca-service':     'presenca-service',
@@ -16,6 +17,19 @@ const REPO_TO_APP: Record<string, string> = {
   'relatorio-service':    'relatorio-service',
   'route-generator':      'route-generator',
 };
+
+function loadRepoToApp(): Record<string, string> {
+  const raw = process.env.REPO_TO_APP_MAP;
+  if (!raw) return DEFAULT_REPO_TO_APP;
+  try {
+    return JSON.parse(raw) as Record<string, string>;
+  } catch {
+    console.warn('[config] REPO_TO_APP_MAP is not valid JSON, using defaults');
+    return DEFAULT_REPO_TO_APP;
+  }
+}
+
+const REPO_TO_APP = loadRepoToApp();
 
 const credential = new ManagedIdentityCredential(CLIENT_ID ? { clientId: CLIENT_ID } : {});
 const appsClient = new ContainerAppsAPIClient(credential, SUBSCRIPTION_ID);
@@ -45,6 +59,15 @@ const server = http.createServer((req, res) => {
     res.writeHead(405).end();
     return;
   }
+
+  if (WEBHOOK_SECRET) {
+    const authHeader = req.headers['authorization'] ?? '';
+    if (authHeader !== `Bearer ${WEBHOOK_SECRET}`) {
+      res.writeHead(401).end();
+      return;
+    }
+  }
+
   const chunks: Buffer[] = [];
   req.on('data', (c: Buffer) => chunks.push(c));
   req.on('end', () => {
