@@ -110,6 +110,24 @@ variable "relatorio_db_password" {
   sensitive = true
 }
 
+# ─── Redis (Upstash — cache externo opcional do Report) ──────────────────────
+
+variable "upstash_redis_connection_string" {
+  type        = string
+  sensitive   = true
+  description = "Connection string TLS do Upstash para StackExchange.Redis. Ex: endpoint:6379,password=token,ssl=true,abortConnect=false"
+
+  validation {
+    condition = (
+      can(regex("^[^,]+:[0-9]+,", var.upstash_redis_connection_string)) &&
+      strcontains(lower(var.upstash_redis_connection_string), "password=") &&
+      strcontains(lower(var.upstash_redis_connection_string), "ssl=true") &&
+      strcontains(lower(var.upstash_redis_connection_string), "abortconnect=false")
+    )
+    error_message = "Use o formato endpoint:porta,password=token,ssl=true,abortConnect=false."
+  }
+}
+
 # ─── route-generator / PostgreSQL (provider externo) ─────────────────────────
 
 variable "route_gen_db_url" {

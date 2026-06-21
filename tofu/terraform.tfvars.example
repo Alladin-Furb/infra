@@ -35,6 +35,11 @@ relatorio_db_name     = "transporte_escolar_relatorios"
 relatorio_db_user     = "relatorio_user"
 relatorio_db_password = "troque-esta-senha"
 
+# ─── Redis (Upstash — cache externo opcional do Report) ──────────────────────
+# Copie endpoint, porta e password/token do console Upstash. Nunca versione o
+# terraform.tfvars real.
+upstash_redis_connection_string = "endpoint.upstash.io:6379,password=AZcvAAIgcDFlODQ1NWM4NWNlYzA0NWU2OWY0ZmU2ZTQ4Mjg3NmI5Yw,ssl=true,abortConnect=false"
+
 # ─── route-generator / PostgreSQL (provider externo) ─────────────────────────
 # Connection string ADO.NET — obtenha no painel do seu provider
 route_gen_db_url = "Host=host;Port=5432;Database=route_gen_db;Username=route_user;Password=troque-esta-senha"
