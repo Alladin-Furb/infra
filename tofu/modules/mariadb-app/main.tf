@@ -61,6 +61,15 @@ resource "azurerm_container_app" "db" {
         name = "db-data"
         path = "/var/lib/mysql"
       }
+
+      liveness_probe {
+        transport               = "TCP"
+        port                    = 3306
+        initial_delay           = 30
+        interval_seconds        = 30
+        failure_count_threshold = 3
+        timeout                 = 5
+      }
     }
   }
 }

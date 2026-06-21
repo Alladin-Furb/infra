@@ -171,11 +171,29 @@ services:
           cpus: '0.5'
           memory: 512M
 
+  redis:
+    image: redis:7.4-alpine
+    container_name: redis
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 256M
+
   relatorio-service:
     image: ${ACR_LOGIN_SERVER}/relatorio-service:latest
     container_name: relatorio-service
     environment:
       ConnectionStrings__RelatoriosDb: Server=relatorio-db;Port=3306;Database=${RELATORIO_DB_NAME};User Id=${RELATORIO_DB_USER};Password=${RELATORIO_DB_PASSWORD};SslMode=None
+      ConnectionStrings__Redis: redis:6379
       PresencaService__BaseUrl: http://presenca-service:8082
       RabbitMQ__Host: rabbitmq
       RabbitMQ__Port: 5672
@@ -188,6 +206,14 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      redis:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/health/ready"]
+      interval: 10s
+      timeout: 5s
+      start_period: 20s
+      retries: 6
     deploy:
       resources:
         limits:

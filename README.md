@@ -2,6 +2,68 @@
 
 Docker Compose infrastructure for a microservices architecture with an API Gateway, JWT-based authentication, and a shared MariaDB database.
 
+## Report Service na nuvem
+
+O Report usa a mesma arquitetura de dados localmente e no Azure:
+
+- MariaDB 11.2 como fonte permanente;
+- CloudAMQP/RabbitMQ para os trabalhos assíncronos;
+- Upstash Redis apenas como cache na nuvem.
+
+O Redis da nuvem é criado manualmente no console do Upstash. O Terraform recebe
+a connection string TLS como variável sensível e a armazena como secret do
+Azure Container App. As conexões MariaDB e CloudAMQP também ficam em secrets.
+No ambiente local, o Compose continua executando seu próprio container Redis.
+
+O Report fica com uma réplica (`min_replicas = 1`, `max_replicas = 1`) porque
+API, dispatcher e worker executam no mesmo processo. Isso evita dispatchers
+concorrentes e impede scale-to-zero enquanto existirem mensagens na fila.
+
+Health checks:
+
+```text
+/health/live   processo ativo
+/health/ready  MariaDB e RabbitMQ obrigatórios; Redis opcional
+/health        alias de readiness
+```
+
+Validação:
+
+```bash
+cd tofu
+tofu fmt -check -recursive
+tofu init -backend=false
+tofu validate
+tofu plan
+```
+
+### Configurar o Upstash
+
+1. Crie um banco gratuito em <https://console.upstash.com/>.
+2. Escolha a região disponível mais próxima do Azure Brazil South.
+3. Copie o endpoint, a porta e a password/token exibidos no console.
+4. Crie `tofu/terraform.tfvars` a partir de
+   `tofu/terraform.tfvars.example`.
+5. Preencha a variável sem versionar o arquivo:
+
+```hcl
+upstash_redis_connection_string = "ENDPOINT:PORT,password=TOKEN,ssl=true,abortConnect=false"
+```
+
+Teste antes da implantação:
+
+```bash
+redis-cli --tls -h ENDPOINT -p PORT -a TOKEN ping
+```
+
+O resultado esperado é `PONG`. O secret não é exposto por outputs do Terraform.
+Em CI/CD, forneça a variável por um secret protegido, por exemplo
+`TF_VAR_upstash_redis_connection_string`.
+
+Depois do deploy, `/health/ready` deve mostrar Redis como `Healthy`. Se o
+Upstash ficar indisponível, o endpoint fica `Degraded` com HTTP 200 e o Report
+continua consultando o MariaDB.
+
 ## Architecture
 
 ```

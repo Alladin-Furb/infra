@@ -93,6 +93,8 @@ module "relatorio_db" {
 
 # RabbitMQ: usa serviço externo (CloudAMQP, free tier 1M msgs/mês).
 # Conexão injetada via var.rabbitmq_url nas variáveis dos serviços.
+# Redis: usa Upstash externo por TLS. A connection string é injetada como
+# variável sensível e armazenada como secret do Container App do Report.
 
 # ─── auth-service ─────────────────────────────────────────────────────────────
 
@@ -112,7 +114,6 @@ resource "azurerm_container_app" "auth_service" {
     name  = "acr-password"
     value = azurerm_container_registry.main.admin_password
   }
-
   ingress {
     external_enabled = false
     target_port      = 8081
@@ -152,13 +153,13 @@ resource "azurerm_container_app" "auth_service" {
       }
 
       liveness_probe {
-        transport        = "HTTP"
-        port             = 8081
-        path             = "/actuator/health"
-        initial_delay    = 30
-        interval_seconds = 30
+        transport               = "HTTP"
+        port                    = 8081
+        path                    = "/actuator/health"
+        initial_delay           = 30
+        interval_seconds        = 30
         failure_count_threshold = 3
-        timeout          = 5
+        timeout                 = 5
       }
     }
 
@@ -221,13 +222,13 @@ resource "azurerm_container_app" "presenca_service" {
       }
 
       liveness_probe {
-        transport        = "HTTP"
-        port             = 8082
-        path             = "/actuator/health"
-        initial_delay    = 30
-        interval_seconds = 30
+        transport               = "HTTP"
+        port                    = 8082
+        path                    = "/actuator/health"
+        initial_delay           = 30
+        interval_seconds        = 30
         failure_count_threshold = 3
-        timeout          = 5
+        timeout                 = 5
       }
     }
 
@@ -282,13 +283,13 @@ resource "azurerm_container_app" "register_adm_service" {
       }
 
       liveness_probe {
-        transport        = "HTTP"
-        port             = 8084
-        path             = "/actuator/health"
-        initial_delay    = 30
-        interval_seconds = 30
+        transport               = "HTTP"
+        port                    = 8084
+        path                    = "/actuator/health"
+        initial_delay           = 30
+        interval_seconds        = 30
         failure_count_threshold = 3
-        timeout          = 5
+        timeout                 = 5
       }
     }
 
@@ -315,6 +316,18 @@ resource "azurerm_container_app" "relatorio_service" {
     name  = "acr-password"
     value = azurerm_container_registry.main.admin_password
   }
+  secret {
+    name  = "report-db-connection"
+    value = "Server=relatorio-db;Port=3306;Database=${var.relatorio_db_name};User=${var.relatorio_db_user};Password=${var.relatorio_db_password};SslMode=None"
+  }
+  secret {
+    name  = "rabbitmq-url"
+    value = var.rabbitmq_url
+  }
+  secret {
+    name  = "redis-connection"
+    value = var.upstash_redis_connection_string
+  }
 
   ingress {
     external_enabled = false
@@ -334,8 +347,16 @@ resource "azurerm_container_app" "relatorio_service" {
       memory = "1Gi"
 
       env {
-        name  = "ConnectionStrings__RelatoriosDb"
-        value = "Server=relatorio-db;Port=3306;Database=${var.relatorio_db_name};User Id=${var.relatorio_db_user};Password=${var.relatorio_db_password};SslMode=Disabled"
+        name        = "ConnectionStrings__RelatoriosDb"
+        secret_name = "report-db-connection"
+      }
+      env {
+        name        = "ConnectionStrings__Redis"
+        secret_name = "redis-connection"
+      }
+      env {
+        name        = "RabbitMQ__Url"
+        secret_name = "rabbitmq-url"
       }
       env {
         name  = "PresencaService__BaseUrl"
@@ -343,19 +364,34 @@ resource "azurerm_container_app" "relatorio_service" {
       }
 
       liveness_probe {
-        transport        = "HTTP"
-        port             = 8080
-        path             = "/health"
-        initial_delay    = 20
-        interval_seconds = 30
+        transport               = "HTTP"
+        port                    = 8080
+        path                    = "/health/live"
+        initial_delay           = 20
+        interval_seconds        = 30
         failure_count_threshold = 3
-        timeout          = 5
+        timeout                 = 5
+      }
+
+      readiness_probe {
+        transport               = "HTTP"
+        port                    = 8080
+        path                    = "/health/ready"
+        initial_delay           = 20
+        interval_seconds        = 30
+        failure_count_threshold = 3
+        success_count_threshold = 1
+        timeout                 = 5
       }
     }
 
-    min_replicas = 0
-    max_replicas = 3
+    min_replicas = 1
+    max_replicas = 1
   }
+
+  depends_on = [
+    module.relatorio_db
+  ]
 }
 
 # ─── api-gateway ──────────────────────────────────────────────────────────────
@@ -416,13 +452,13 @@ resource "azurerm_container_app" "api_gateway" {
       }
 
       liveness_probe {
-        transport        = "HTTP"
-        port             = 8080
-        path             = "/actuator/health"
-        initial_delay    = 30
-        interval_seconds = 30
+        transport               = "HTTP"
+        port                    = 8080
+        path                    = "/actuator/health"
+        initial_delay           = 30
+        interval_seconds        = 30
         failure_count_threshold = 3
-        timeout          = 5
+        timeout                 = 5
       }
     }
 
@@ -473,12 +509,12 @@ resource "azurerm_container_app" "route_generator" {
       }
 
       liveness_probe {
-        transport        = "TCP"
-        port             = 5001
-        initial_delay    = 20
-        interval_seconds = 30
+        transport               = "TCP"
+        port                    = 5001
+        initial_delay           = 20
+        interval_seconds        = 30
         failure_count_threshold = 3
-        timeout          = 5
+        timeout                 = 5
       }
     }
 
