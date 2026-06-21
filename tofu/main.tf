@@ -318,7 +318,7 @@ resource "azurerm_container_app" "relatorio_service" {
   }
   secret {
     name  = "report-db-connection"
-    value = "Server=relatorio-db;Port=3306;Database=${var.relatorio_db_name};User=${var.relatorio_db_user};Password=${var.relatorio_db_password};SslMode=None"
+    value = "Server=relatorio-db;Port=3306;Database=${var.relatorio_db_name};User=${var.relatorio_db_user};Password=${var.relatorio_db_password};SslMode=Disabled"
   }
   secret {
     name  = "rabbitmq-url"
