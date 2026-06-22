@@ -5,7 +5,7 @@
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "base_url", "value": "https://api-gateway.politegrass-b0f9539d.brazilsouth.azurecontainerapps.io" },
+    { "key": "base_url", "value": "https://api-gateway.gentlemushroom-414bf899.brazilsouth.azurecontainerapps.io" },
     { "key": "token", "value": "" }
   ],
   "auth": {
