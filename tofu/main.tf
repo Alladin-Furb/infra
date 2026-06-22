@@ -320,10 +320,12 @@ resource "azurerm_container_app" "relatorio_service" {
     name  = "report-db-connection"
     value = "Server=relatorio-db;Port=3306;Database=${var.relatorio_db_name};User=${var.relatorio_db_user};Password=${var.relatorio_db_password};SslMode=Disabled"
   }
+
   secret {
     name  = "rabbitmq-url"
     value = var.rabbitmq_url
   }
+  
   secret {
     name  = "redis-connection"
     value = var.upstash_redis_connection_string
@@ -601,29 +603,18 @@ resource "azurerm_role_assignment" "deploy_contributor" {
   principal_id         = azurerm_user_assigned_identity.deploy.principal_id
 }
 
-# ─── ACR Webhooks → deploy-webhook ────────────────────────────────────────────
-
-locals {
-  webhook_services = toset([
-    "auth-service",
-    "presenca-service",
-    "register-adm-service",
-    "relatorio-service",
-    "api-gateway",
-    "route-generator",
-  ])
-}
+# ─── ACR Webhook → deploy-webhook ─────────────────────────────────────────────
+# ACR Basic permite só 2 webhooks — usa um único sem scope (dispara para todos
+# os repositórios). O deploy-webhook roteia pelo nome do repo no payload.
 
 resource "azurerm_container_registry_webhook" "deploy" {
-  for_each = local.webhook_services
-
-  name                = replace(each.key, "-", "")
+  name                = "deployall"
   resource_group_name = azurerm_resource_group.main.name
   registry_name       = azurerm_container_registry.main.name
   location            = azurerm_resource_group.main.location
 
   service_uri = "https://${azurerm_container_app.deploy_webhook.ingress[0].fqdn}"
   status      = "enabled"
-  scope       = "${each.key}:*"
+  scope       = ""
   actions     = ["push"]
 }

@@ -12,6 +12,11 @@ variable "tenant_id" {
 
 # ─── Infraestrutura ───────────────────────────────────────────────────────────
 
+variable "resource_group_name" {
+  type    = string
+  default = "infra-rg"
+}
+
 variable "location" {
   type    = string
   default = "brazilsouth"
@@ -23,10 +28,6 @@ variable "environment" {
   description = "Nome do ambiente (dev, staging, prod). Usado no nome do Container App Environment."
 }
 
-variable "resource_group_name" {
-  type    = string
-  default = "infra-rg"
-}
 
 # ─── ACR ──────────────────────────────────────────────────────────────────────
 
