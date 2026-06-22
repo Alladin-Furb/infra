@@ -151,6 +151,10 @@ resource "azurerm_container_app" "auth_service" {
         name  = "JWT_EXPIRATION"
         value = tostring(var.jwt_expiration)
       }
+      env {
+        name  = "REGISTER_ADM_SERVICE_URL"
+        value = "http://register-adm-service"
+      }
 
       liveness_probe {
         transport               = "HTTP"
