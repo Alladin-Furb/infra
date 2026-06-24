@@ -278,6 +278,18 @@ resource "azurerm_container_app" "register_adm_service" {
       memory = "1Gi"
 
       env {
+        name  = "SPRING_DATASOURCE_URL"
+        value = "jdbc:mariadb://mariadb:3306/${var.db_name}"
+      }
+      env {
+        name  = "SPRING_DATASOURCE_USERNAME"
+        value = var.db_user
+      }
+      env {
+        name  = "SPRING_DATASOURCE_PASSWORD"
+        value = var.db_password
+      }
+      env {
         name  = "SPRING_RABBITMQ_ADDRESSES"
         value = var.rabbitmq_url
       }
