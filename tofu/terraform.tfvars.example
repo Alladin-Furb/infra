@@ -26,6 +26,10 @@ db_root_password = "troque-a-senha-root"
 jwt_secret     = "troque-este-segredo-minimo-32-bytes"
 jwt_expiration = 3600000
 
+# ─── register-adm-service / PostgreSQL (provider externo) ───────────────────
+# JDBC URL completa — obtenha no painel do seu provider (Supabase, Neon, etc.)
+register_adm_db_url = "jdbc:postgresql://host:5432/register_adm_db?user=postgres&password=troque-esta-senha"
+
 # ─── presenca-service / PostgreSQL (provider externo) ────────────────────────
 # JDBC URL completa — obtenha no painel do seu provider (Supabase, Neon, etc.)
 presenca_db_url = "jdbc:postgresql://host:5432/presenca_db?user=presenca_user&password=troque-esta-senha"

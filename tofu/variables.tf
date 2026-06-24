@@ -86,6 +86,14 @@ variable "jwt_expiration" {
   default = 3600000
 }
 
+# ─── register-adm-service / PostgreSQL (provider externo) ───────────────────
+
+variable "register_adm_db_url" {
+  type        = string
+  sensitive   = true
+  description = "JDBC URL completa do PostgreSQL externo. Ex: jdbc:postgresql://host:5432/db?user=u&password=p"
+}
+
 # ─── presenca-service / PostgreSQL (provider externo) ────────────────────────
 
 variable "presenca_db_url" {
