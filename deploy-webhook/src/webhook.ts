@@ -47,6 +47,16 @@ async function deploy(repository: string, tag: string): Promise<void> {
     if (current.template?.containers?.[0]) {
       current.template.containers[0].image = image;
     }
+    // Azure returns secrets without values on GET; re-sending them causes
+    // ContainerAppSecretInvalid. Remove from the PATCH payload so Azure
+    // keeps the existing secret values unchanged.
+    if (current.configuration) {
+      current.configuration.secrets = undefined;
+    }
+    // Use the commit tag as the revision suffix to guarantee uniqueness.
+    if (current.template) {
+      current.template.revisionSuffix = tag.replace(/[^a-z0-9]/gi, '').toLowerCase().slice(0, 24);
+    }
     await appsClient.containerApps.beginUpdateAndWait(RG, app, current);
     console.log(`[ok] ${app} updated`);
   } catch (err) {
