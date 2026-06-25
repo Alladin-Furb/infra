@@ -546,6 +546,16 @@ resource "azurerm_container_app" "route_generator" {
         value = var.route_gen_db_url
       }
 
+      env {
+        name  = "Services__AttendanceBaseUrl"
+        value = "http://presenca-service"
+      }
+
+      env {
+        name  = "Services__RegisterBaseUrl"
+        value = "http://register-adm-service"
+      }
+
       liveness_probe {
         transport               = "HTTP"
         port                    = 8080
