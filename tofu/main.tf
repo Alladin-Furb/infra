@@ -167,7 +167,7 @@ resource "azurerm_container_app" "auth_service" {
       }
     }
 
-    min_replicas = 0
+    min_replicas = 1
     max_replicas = 3
   }
 }
@@ -213,6 +213,22 @@ resource "azurerm_container_app" "presenca_service" {
         value = var.presenca_db_url
       }
       env {
+        name  = "SPRING_DATASOURCE_USERNAME"
+        value = var.presenca_db_username
+      }
+      env {
+        name  = "SPRING_DATASOURCE_PASSWORD"
+        value = var.presenca_db_password
+      }
+      env {
+        name  = "SPRING_DATASOURCE_MAX_POOL_SIZE"
+        value = "3"
+      }
+      env {
+        name  = "SPRING_DATASOURCE_MIN_IDLE"
+        value = "1"
+      }
+      env {
         name  = "SPRING_PROFILES_ACTIVE"
         value = "prod"
       }
@@ -223,6 +239,10 @@ resource "azurerm_container_app" "presenca_service" {
       env {
         name  = "SPRING_RABBITMQ_SSL_ENABLED"
         value = "true"
+      }
+      env {
+        name  = "JAVA_TOOL_OPTIONS"
+        value = "-Djava.net.preferIPv4Stack=true"
       }
 
       liveness_probe {
@@ -236,7 +256,7 @@ resource "azurerm_container_app" "presenca_service" {
       }
     }
 
-    min_replicas = 0
+    min_replicas = 1
     max_replicas = 3
   }
 }
@@ -289,6 +309,10 @@ resource "azurerm_container_app" "register_adm_service" {
         name  = "SPRING_RABBITMQ_SSL_ENABLED"
         value = "true"
       }
+      env {
+        name  = "JAVA_TOOL_OPTIONS"
+        value = "-Djava.net.preferIPv4Stack=true"
+      }
 
       liveness_probe {
         transport               = "HTTP"
@@ -301,7 +325,7 @@ resource "azurerm_container_app" "register_adm_service" {
       }
     }
 
-    min_replicas = 0
+    min_replicas = 1
     max_replicas = 3
   }
 }
@@ -395,7 +419,7 @@ resource "azurerm_container_app" "relatorio_service" {
       }
     }
 
-    min_replicas = 0
+    min_replicas = 1
     max_replicas = 3
   }
 
@@ -476,7 +500,7 @@ resource "azurerm_container_app" "api_gateway" {
       }
     }
 
-    min_replicas = 0
+    min_replicas = 1
     max_replicas = 3
   }
 }
@@ -533,8 +557,9 @@ resource "azurerm_container_app" "route_generator" {
       }
 
       liveness_probe {
-        transport               = "TCP"
+        transport               = "HTTP"
         port                    = 8080
+        path                    = "/health"
         initial_delay           = 20
         interval_seconds        = 30
         failure_count_threshold = 3
@@ -542,7 +567,7 @@ resource "azurerm_container_app" "route_generator" {
       }
     }
 
-    min_replicas = 0
+    min_replicas = 1
     max_replicas = 3
   }
 }

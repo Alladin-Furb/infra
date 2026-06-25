@@ -99,7 +99,17 @@ variable "register_adm_db_url" {
 variable "presenca_db_url" {
   type        = string
   sensitive   = true
-  description = "JDBC URL completa do PostgreSQL externo. Ex: jdbc:postgresql://host:5432/db?user=u&password=p"
+  description = "JDBC URL completa do PostgreSQL externo. Ex: jdbc:postgresql://host:5432/db"
+}
+
+variable "presenca_db_username" {
+  type      = string
+  sensitive = true
+}
+
+variable "presenca_db_password" {
+  type      = string
+  sensitive = true
 }
 
 # ─── relatorio-service / MariaDB ──────────────────────────────────────────────
