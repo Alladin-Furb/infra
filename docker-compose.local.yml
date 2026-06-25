@@ -1,0 +1,88 @@
+# ───────────────────────────────────────────────────────────────────────────
+# Override para TESTE LOCAL: builda cada serviço a partir do código-fonte dos
+# repositórios irmãos (em vez de puxar imagens do ACR), provisiona o banco do
+# register-adm (faltante no compose base) e adiciona o frontend React.
+#
+# Uso (dentro de infra/):
+#   docker compose -f docker-compose.yml -f docker-compose.local.yml up --build -d
+#
+# Encerrar:
+#   docker compose -f docker-compose.yml -f docker-compose.local.yml down
+# ───────────────────────────────────────────────────────────────────────────
+
+services:
+  auth-service:
+    build:
+      context: ../auth-service
+      dockerfile: Dockerfile
+
+  api-gateway:
+    build:
+      context: ../api-gateway
+      dockerfile: Dockerfile
+
+  presenca-service:
+    build:
+      context: ../attendance
+      dockerfile: Dockerfile
+
+  # Banco do register-adm (ausente no compose base) + datasource/RabbitMQ
+  # que a aplicação RegisterAdm-2.0 espera.
+  register-adm-db:
+    image: postgres:17
+    container_name: register-adm-db
+    environment:
+      POSTGRES_DB: ${REGISTER_ADM_DB_NAME}
+      POSTGRES_USER: ${REGISTER_ADM_DB_USER}
+      POSTGRES_PASSWORD: ${REGISTER_ADM_DB_PASSWORD}
+    volumes:
+      - register-adm-db-data:/var/lib/postgresql/data
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${REGISTER_ADM_DB_USER}", "-d", "${REGISTER_ADM_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  register-adm-service:
+    build:
+      context: ../RegisterAdm-2.0
+      dockerfile: Dockerfile
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://register-adm-db:5432/${REGISTER_ADM_DB_NAME}
+      SPRING_DATASOURCE_USERNAME: ${REGISTER_ADM_DB_USER}
+      SPRING_DATASOURCE_PASSWORD: ${REGISTER_ADM_DB_PASSWORD}
+      SPRING_RABBITMQ_ADDRESSES: amqp://${RABBITMQ_USERNAME}:${RABBITMQ_PASSWORD}@rabbitmq:5672
+    depends_on:
+      register-adm-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  relatorio-service:
+    build:
+      context: ../report/TransporteEscolar.Relatorios
+      dockerfile: Dockerfile
+
+  route-generator:
+    build:
+      context: ../route-gen
+      dockerfile: Dockerfile
+
+  # Frontend React (servido por nginx, proxy /api → api-gateway:8080).
+  frontend:
+    image: ${ACR_LOGIN_SERVER}/frontend:latest
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    container_name: frontend
+    ports:
+      - "3000:80"
+    networks:
+      - frontend
+    depends_on:
+      - api-gateway
+
+volumes:
+  register-adm-db-data:

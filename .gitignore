@@ -1,5 +1,8 @@
 .env
 
+# Certificados locais (CA corporativa para builds atrás de TLS-inspection)
+certs/
+
 # OpenTofu / Terraform
 tofu/.terraform/
 tofu/.terraform.lock.hcl

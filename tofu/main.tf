@@ -457,6 +457,10 @@ resource "azurerm_container_app" "api_gateway" {
         value = "http://register-adm-service"
       }
       env {
+        name  = "ROTEIRIZACAO_SERVICE_URL"
+        value = "http://route-generator"
+      }
+      env {
         name  = "JWT_SECRET"
         value = var.jwt_secret
       }
@@ -498,8 +502,8 @@ resource "azurerm_container_app" "route_generator" {
 
   ingress {
     external_enabled = false
-    target_port      = 5001
-    transport        = "http2"
+    target_port      = 8080
+    transport        = "http"
     traffic_weight {
       latest_revision = true
       percentage      = 100
@@ -518,9 +522,19 @@ resource "azurerm_container_app" "route_generator" {
         value = var.route_gen_db_url
       }
 
+      env {
+        name  = "Services__AttendanceBaseUrl"
+        value = "http://presenca-service"
+      }
+
+      env {
+        name  = "Services__RegisterBaseUrl"
+        value = "http://register-adm-service"
+      }
+
       liveness_probe {
         transport               = "TCP"
-        port                    = 5001
+        port                    = 8080
         initial_delay           = 20
         interval_seconds        = 30
         failure_count_threshold = 3
