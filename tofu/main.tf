@@ -481,6 +481,10 @@ resource "azurerm_container_app" "api_gateway" {
         value = "http://register-adm-service"
       }
       env {
+        name  = "ROTEIRIZACAO_SERVICE_URL"
+        value = "http://route-generator"
+      }
+      env {
         name  = "JWT_SECRET"
         value = var.jwt_secret
       }
