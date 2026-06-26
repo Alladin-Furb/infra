@@ -53,7 +53,15 @@ variable "storage_account_name" {
   }
 }
 
-# ─── auth-service / MariaDB ───────────────────────────────────────────────────
+# ─── auth-service / PostgreSQL (Supabase) ─────────────────────────────────────
+
+variable "auth_db_url" {
+  type        = string
+  sensitive   = true
+  description = "JDBC URL completa do PostgreSQL externo para o auth-service. Ex: jdbc:postgresql://host:5432/db?user=u&password=p&sslmode=require"
+}
+
+# ─── MariaDB (mariadb container app — mantido para relatorio-db) ───────────────
 
 variable "db_name" {
   type    = string
