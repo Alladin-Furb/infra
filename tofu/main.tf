@@ -33,12 +33,6 @@ resource "azurerm_storage_account" "db_storage" {
   account_replication_type = "LRS"
 }
 
-resource "azurerm_storage_share" "mariadb_data" {
-  name               = "mariadb-data"
-  storage_account_id = azurerm_storage_account.db_storage.id
-  quota              = 5
-}
-
 resource "azurerm_storage_share" "relatorio_db_data" {
   name               = "relatorio-db-data"
   storage_account_id = azurerm_storage_account.db_storage.id
@@ -47,15 +41,6 @@ resource "azurerm_storage_share" "relatorio_db_data" {
 
 # Montagem dos shares no Container Apps Environment ─────────────────────────────
 
-resource "azurerm_container_app_environment_storage" "mariadb_data" {
-  name                         = "mariadb-data"
-  container_app_environment_id = azurerm_container_app_environment.main.id
-  account_name                 = azurerm_storage_account.db_storage.name
-  share_name                   = azurerm_storage_share.mariadb_data.name
-  access_key                   = azurerm_storage_account.db_storage.primary_access_key
-  access_mode                  = "ReadWrite"
-}
-
 resource "azurerm_container_app_environment_storage" "relatorio_db_data" {
   name                         = "relatorio-db-data"
   container_app_environment_id = azurerm_container_app_environment.main.id
@@ -63,20 +48,6 @@ resource "azurerm_container_app_environment_storage" "relatorio_db_data" {
   share_name                   = azurerm_storage_share.relatorio_db_data.name
   access_key                   = azurerm_storage_account.db_storage.primary_access_key
   access_mode                  = "ReadWrite"
-}
-
-# ─── Bancos de dados (módulo mariadb-app) ─────────────────────────────────────
-
-module "mariadb" {
-  source              = "./modules/mariadb-app"
-  name                = "mariadb"
-  environment_id      = azurerm_container_app_environment.main.id
-  resource_group_name = azurerm_resource_group.main.name
-  root_password       = var.db_root_password
-  password            = var.db_password
-  db_name             = var.db_name
-  db_user             = var.db_user
-  env_storage_name    = azurerm_container_app_environment_storage.mariadb_data.name
 }
 
 module "relatorio_db" {

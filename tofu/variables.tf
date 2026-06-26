@@ -61,28 +61,6 @@ variable "auth_db_url" {
   description = "JDBC URL completa do PostgreSQL externo para o auth-service. Ex: jdbc:postgresql://host:5432/db?user=u&password=p&sslmode=require"
 }
 
-# ─── MariaDB (mariadb container app — mantido para relatorio-db) ───────────────
-
-variable "db_name" {
-  type    = string
-  default = "auth_db"
-}
-
-variable "db_user" {
-  type    = string
-  default = "app_user"
-}
-
-variable "db_password" {
-  type      = string
-  sensitive = true
-}
-
-variable "db_root_password" {
-  type        = string
-  sensitive   = true
-  description = "Senha root do MariaDB."
-}
 
 variable "jwt_secret" {
   type      = string
