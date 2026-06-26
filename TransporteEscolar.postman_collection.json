@@ -105,7 +105,7 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Novo Admin\",\n  \"email\": \"admin2@furb.br\",\n  \"password\": \"admin456\"\n}"
+              "raw": "{\n  \"name\": \"Novo Admin\",\n  \"email\": \"admin2@furb.br\",\n  \"password\": \"admin456789\"\n}"
             }
           }
         },
@@ -317,27 +317,27 @@
       "description": "presença-service (attendance) — porta 8082. Rotas: /api/v1/**\n\n🔧 FIX APLICADO: ddl-auto=create → banco será recriado com schema UUID no próximo redeploy.\nModelo atual inclui campos novos no Aluno (externalId, cpf, cursoId, criado_em, atualizado_em)\ne no Curso (endereco_destino, cidade, destino_latitude, destino_longitude, horario_partida, etc.)\n\nNOTA: após o primeiro redeploy, reverter ddl-auto=create → update.",
       "item": [
         {
-          "name": "Cursos",
+          "name": "Viagens (ex-Cursos)",
           "item": [
             {
               "name": "Listar cursos 🔧",
               "request": {
                 "method": "GET",
-                "url": "{{base_url}}/api/v1/cursos"
+                "url": "{{base_url}}/api/v1/viagens"
               }
             },
             {
               "name": "Buscar por ID 🔧",
               "request": {
                 "method": "GET",
-                "url": "{{base_url}}/api/v1/cursos/{{curso_id}}"
+                "url": "{{base_url}}/api/v1/viagens/{{curso_id}}"
               }
             },
             {
               "name": "Buscar por código 🔧",
               "request": {
                 "method": "GET",
-                "url": "{{base_url}}/api/v1/cursos/codigo/CC001"
+                "url": "{{base_url}}/api/v1/viagens/codigo/CC001"
               }
             },
             {
@@ -345,7 +345,7 @@
               "request": {
                 "method": "GET",
                 "url": {
-                  "raw": "{{base_url}}/api/v1/cursos/buscar?nome=Computação",
+                  "raw": "{{base_url}}/api/v1/viagens/buscar?nome=Computação",
                   "query": [{ "key": "nome", "value": "Computação" }]
                 }
               }
@@ -366,7 +366,7 @@
               ],
               "request": {
                 "method": "POST",
-                "url": "{{base_url}}/api/v1/cursos",
+                "url": "{{base_url}}/api/v1/viagens",
                 "header": [{ "key": "Content-Type", "value": "application/json" }],
                 "body": {
                   "mode": "raw",
@@ -457,8 +457,54 @@
           ]
         },
         {
+          "name": "Disciplinas",
+          "item": [
+            {
+              "name": "Listar disciplinas 🔧",
+              "request": {
+                "method": "GET",
+                "url": "{{base_url}}/api/v1/disciplinas"
+              }
+            },
+            {
+              "name": "Buscar disciplina por ID 🔧",
+              "request": {
+                "method": "GET",
+                "url": "{{base_url}}/api/v1/disciplinas/{{curso_id}}"
+              }
+            },
+            {
+              "name": "Buscar disciplina por código 🔧",
+              "request": {
+                "method": "GET",
+                "url": "{{base_url}}/api/v1/disciplinas/codigo/DISC001"
+              }
+            },
+            {
+              "name": "Cadastrar disciplina 🔧",
+              "request": {
+                "method": "POST",
+                "url": "{{base_url}}/api/v1/disciplinas",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"codigo\": \"DISC001\",\n  \"nome\": \"Cálculo I\",\n  \"descricao\": \"Cálculo diferencial e integral\",\n  \"cargaHoraria\": 80\n}",
+                  "options": { "raw": { "language": "json" } }
+                }
+              }
+            }
+          ]
+        },
+        {
           "name": "Presenças",
           "item": [
+            {
+              "name": "Listar presenças confirmadas 🔧",
+              "request": {
+                "method": "GET",
+                "url": "{{base_url}}/api/v1/presencas/confirmados"
+              }
+            },
             {
               "name": "Registrar presença 🔧",
               "event": [
@@ -715,7 +761,8 @@
           "name": "Health ✅ 200",
           "request": {
             "method": "GET",
-            "url": "{{base_url}}/api/rotas/health"
+            "url": "{{base_url}}/api/rotas/health",
+            "description": "Requer token — gateway bloqueia /api/rotas/** sem auth."
           }
         },
         {
