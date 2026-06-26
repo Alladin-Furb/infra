@@ -1,17 +1,18 @@
 {
   "info": {
     "name": "Transporte Escolar — API (2026-06-26)",
-    "description": "Collection completa da API do sistema de transporte escolar.\n\nComo usar:\n1. Importe esta collection\n2. Execute **Auth / Login (Admin)** — o token JWT é salvo automaticamente em {{token}}\n3. As demais requisições usam o token automaticamente via Bearer Auth\n\nBase URL configurada como variável de collection {{base_url}}.\n\nStatus dos serviços (26/06/2026):\n✅ Auth-service — login e criação de admins funcionando\n✅ Relatorio-service — métricas e sync funcionando\n⚠️  Register-ADM — 500 (ClassCastException Long→UUID no banco)\n⚠️  Presença-service — 404/500 (UUID/Long mismatch; CursoController sem handler)\n⚠️  Route-generator — DTO binding issue na versão atual deployada",
+    "description": "Collection completa da API do sistema de transporte escolar.\n\nComo usar:\n1. Importe esta collection\n2. Execute **Auth / Login (Admin)** — o token JWT é salvo automaticamente em {{token}}\n3. As demais requisições usam o token automaticamente via Bearer Auth\n\nBase URL configurada como variável de collection {{base_url}}.\n\nStatus dos serviços (26/06/2026 — pós-fix):\n✅ Auth-service — login, criação de usuários, listar funcionando\n✅ Relatorio-service — métricas e sync funcionando\n🔧 Register-ADM — ddl-auto alterado para create (aguarda redeploy CI/CD)\n🔧 Presença-service — ddl-auto alterado para create (aguarda redeploy CI/CD)\n🔧 Route-generator — auto-reset de schema no startup (aguarda redeploy CI/CD)\n🔧 Gateway — rota /eleicao/** adicionada (aguarda redeploy CI/CD)\n\nApós redeploy dos serviços, os endpoints marcados com 🔧 devem funcionar.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
     { "key": "base_url", "value": "https://api-gateway.gentlemushroom-414bf899.brazilsouth.azurecontainerapps.io", "type": "string" },
     { "key": "token", "value": "", "type": "string" },
     { "key": "user_id", "value": "", "type": "string" },
-    { "key": "aluno_id", "value": "1", "type": "string" },
-    { "key": "curso_id", "value": "1", "type": "string" },
-    { "key": "presenca_id", "value": "1", "type": "string" },
-    { "key": "rota_id", "value": "1", "type": "string" },
+    { "key": "aluno_id", "value": "", "type": "string" },
+    { "key": "curso_id", "value": "", "type": "string" },
+    { "key": "presenca_id", "value": "", "type": "string" },
+    { "key": "rota_id", "value": "", "type": "string" },
+    { "key": "veiculo_id", "value": "", "type": "string" },
     { "key": "relatorio_id", "value": "", "type": "string" }
   ],
   "auth": {
@@ -21,7 +22,7 @@
   "item": [
     {
       "name": "Auth",
-      "description": "auth-service — porta 8081. Todas as rotas sob /api/auth/**",
+      "description": "auth-service — porta 8081. Todas as rotas sob /api/auth/**\n\nEndpoints disponíveis na versão atual:\n- POST /login\n- POST /users/alunos (cria user + chama register-adm)\n- POST /users/motoristas (cria user + chama register-adm)\n- POST /users/admins (cria user standalone)\n- GET /users\n- POST /users/{id}/temporary-password\n\nRemovidos na migração UUID: POST /register e PATCH /users/{id}/role",
       "item": [
         {
           "name": "Login (Admin) ✅",
@@ -109,19 +110,19 @@
           }
         },
         {
-          "name": "Registrar usuário ⚠️ 500",
-          "request": {
-            "method": "POST",
-            "url": "{{base_url}}/api/auth/register",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"João Silva\",\n  \"email\": \"joao@furb.br\",\n  \"password\": \"senha123\"\n}"
+          "name": "Criar aluno (auth) 🔧 aguarda fix register-adm",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.id) pm.collectionVariables.set('user_id', res.id);"
+                ],
+                "type": "text/javascript"
+              }
             }
-          }
-        },
-        {
-          "name": "Criar aluno (auth) ⚠️ 502",
+          ],
           "request": {
             "method": "POST",
             "url": "{{base_url}}/api/auth/users/alunos",
@@ -129,51 +130,87 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"name\": \"Aluno Teste\",\n  \"email\": \"aluno@furb.br\",\n  \"password\": \"aluno123\",\n  \"matricula\": \"2023002\",\n  \"cpf\": \"12345678901\"\n}"
-            }
+            },
+            "description": "Cria o user no auth-service e chama register-adm para criar o perfil de aluno. Depende do fix do banco register-adm (ddl-auto=create)."
           }
         },
         {
-          "name": "Atualizar papel do usuário ⚠️ 500",
+          "name": "Criar motorista (auth) 🔧 aguarda fix register-adm",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.id) pm.collectionVariables.set('user_id', res.id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
-            "method": "PATCH",
-            "url": "{{base_url}}/api/auth/users/{{user_id}}/role",
+            "method": "POST",
+            "url": "{{base_url}}/api/auth/users/motoristas",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"role\": \"ROLE_MOTORISTA\"\n}"
-            }
+              "raw": "{\n  \"name\": \"Carlos Motorista\",\n  \"email\": \"carlos@furb.br\",\n  \"password\": \"motor123\",\n  \"carteiraMotorista\": \"12345678901\"\n}"
+            },
+            "description": "Cria o user no auth-service e chama register-adm para criar o perfil de motorista."
+          }
+        },
+        {
+          "name": "Gerar senha temporária ✅",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/auth/users/{{user_id}}/temporary-password",
+            "description": "Gera e retorna uma senha temporária para o usuário. Requer ROLE_ADMIN."
           }
         }
       ]
     },
     {
-      "name": "Administração (RegisterAdm) ⚠️",
-      "description": "register-adm-service — porta 8084. Rotas: /admin/**, /alunos/**, /motoristas/**, /veiculos/**\n\n⚠️ ERRO ATUAL: ClassCastException Cannot cast java.lang.Long to java.util.UUID.\nA versão deployada usa UUID como ID mas o banco Supabase tem dados com IDs Long.",
+      "name": "Administração (RegisterAdm) 🔧",
+      "description": "register-adm-service — porta 8084. Rotas: /admin/**, /alunos/**, /motoristas/**, /veiculos/**\n\n🔧 FIX APLICADO: ddl-auto=create → banco será recriado com schema UUID no próximo redeploy.\nApós redeploy: todos os IDs mudam de Long para UUID (Guid).\n\nNOTA: após o primeiro redeploy, reverter ddl-auto=create → update para não perder dados em restarts futuros.",
       "item": [
         {
           "name": "Alunos",
           "item": [
             {
-              "name": "Listar alunos ⚠️ 500",
+              "name": "Listar alunos 🔧",
               "request": {
                 "method": "GET",
                 "url": "{{base_url}}/admin/alunos"
               }
             },
             {
-              "name": "Cadastrar aluno ⚠️ 400",
+              "name": "Cadastrar aluno 🔧",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const res = pm.response.json();",
+                      "if (res.id) pm.collectionVariables.set('aluno_id', res.id);"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
               "request": {
                 "method": "POST",
                 "url": "{{base_url}}/admin/alunos",
                 "header": [{ "key": "Content-Type", "value": "application/json" }],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"matricula\": \"2023001\",\n  \"nome\": \"Maria Souza\",\n  \"email\": \"maria@furb.br\",\n  \"telefone\": \"47999999999\",\n  \"rotaTransporte\": \"Rota 1\",\n  \"cursoId\": 1,\n  \"nomeCurso\": \"Ciência da Computação\",\n  \"faculdade\": \"FURB\",\n  \"confirmouPresenca\": false\n}"
-                }
+                  "raw": "{\n  \"matricula\": \"2023001\",\n  \"nome\": \"Maria Souza\",\n  \"email\": \"maria@furb.br\",\n  \"telefone\": \"47999999999\",\n  \"rotaTransporte\": \"Rota 1\",\n  \"cursoId\": \"{{curso_id}}\",\n  \"nomeCurso\": \"Ciência da Computação\",\n  \"faculdade\": \"FURB\",\n  \"confirmouPresenca\": false\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "description": "cursoId deve ser UUID após o fix."
               }
             },
             {
-              "name": "Atualizar presença do aluno",
+              "name": "Atualizar presença do aluno 🔧",
               "request": {
                 "method": "PUT",
                 "url": {
@@ -188,14 +225,26 @@
           "name": "Motoristas",
           "item": [
             {
-              "name": "Listar motoristas ⚠️ 500",
+              "name": "Listar motoristas 🔧",
               "request": {
                 "method": "GET",
                 "url": "{{base_url}}/admin/motoristas"
               }
             },
             {
-              "name": "Cadastrar motorista ⚠️ 500",
+              "name": "Cadastrar motorista 🔧",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const res = pm.response.json();",
+                      "if (res.id) pm.collectionVariables.set('user_id', res.id);"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
               "request": {
                 "method": "POST",
                 "url": "{{base_url}}/admin/motoristas",
@@ -212,14 +261,26 @@
           "name": "Veículos",
           "item": [
             {
-              "name": "Listar veículos ⚠️ 500",
+              "name": "Listar veículos 🔧",
               "request": {
                 "method": "GET",
                 "url": "{{base_url}}/admin/veiculos"
               }
             },
             {
-              "name": "Cadastrar veículo ⚠️ 400",
+              "name": "Cadastrar veículo 🔧",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const res = pm.response.json();",
+                      "if (res.id) pm.collectionVariables.set('veiculo_id', res.id);"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
               "request": {
                 "method": "POST",
                 "url": "{{base_url}}/admin/veiculos",
@@ -231,64 +292,56 @@
               }
             },
             {
-              "name": "Atualizar capacidade",
+              "name": "Atualizar capacidade 🔧",
               "request": {
                 "method": "PUT",
                 "url": {
-                  "raw": "{{base_url}}/veiculos/{{aluno_id}}/capacidade?capacidade=45",
+                  "raw": "{{base_url}}/veiculos/{{veiculo_id}}/capacidade?capacidade=45",
                   "query": [{ "key": "capacidade", "value": "45" }]
                 }
               }
             },
             {
-              "name": "Remover veículo",
+              "name": "Remover veículo 🔧",
               "request": {
                 "method": "DELETE",
-                "url": "{{base_url}}/veiculos/{{aluno_id}}"
+                "url": "{{base_url}}/veiculos/{{veiculo_id}}"
               }
             }
           ]
         },
-        {
-          "name": "Eleição (Bully Algorithm) ⚠️ 404",
-          "request": {
-            "method": "GET",
-            "url": "{{base_url}}/eleicao/iniciar",
-            "description": "Rota /eleicao/** não configurada no API Gateway. Precisa adicionar ao gateway."
-          }
-        }
       ]
     },
     {
-      "name": "Presença ⚠️",
-      "description": "presença-service (attendance) — porta 8082. Rotas: /api/v1/**\n\n⚠️ ERROS ATUAIS:\n- /api/v1/cursos/** → 500 'No static resource' (CursoController sem handler registrado)\n- /api/v1/alunos/** → 404 ClassCastException Long→UUID\n- /api/v1/presencas/** → 404 UUID deserialization error\n\nProblema raiz: schema do banco tem colunas como Long (professor_id, curso_id) mas a versão deployada espera UUID. Tentativa de ALTER falhou no startup.",
+      "name": "Presença 🔧",
+      "description": "presença-service (attendance) — porta 8082. Rotas: /api/v1/**\n\n🔧 FIX APLICADO: ddl-auto=create → banco será recriado com schema UUID no próximo redeploy.\nModelo atual inclui campos novos no Aluno (externalId, cpf, cursoId, criado_em, atualizado_em)\ne no Curso (endereco_destino, cidade, destino_latitude, destino_longitude, horario_partida, etc.)\n\nNOTA: após o primeiro redeploy, reverter ddl-auto=create → update.",
       "item": [
         {
           "name": "Cursos",
           "item": [
             {
-              "name": "Listar cursos ⚠️ 500",
+              "name": "Listar cursos 🔧",
               "request": {
                 "method": "GET",
                 "url": "{{base_url}}/api/v1/cursos"
               }
             },
             {
-              "name": "Buscar por ID ⚠️ 500",
+              "name": "Buscar por ID 🔧",
               "request": {
                 "method": "GET",
                 "url": "{{base_url}}/api/v1/cursos/{{curso_id}}"
               }
             },
             {
-              "name": "Buscar por código ⚠️ 500",
+              "name": "Buscar por código 🔧",
               "request": {
                 "method": "GET",
                 "url": "{{base_url}}/api/v1/cursos/codigo/CC001"
               }
             },
             {
-              "name": "Buscar por nome ⚠️ 500",
+              "name": "Buscar por nome 🔧",
               "request": {
                 "method": "GET",
                 "url": {
@@ -298,15 +351,29 @@
               }
             },
             {
-              "name": "Cadastrar curso ⚠️ 500",
+              "name": "Cadastrar curso 🔧",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const res = pm.response.json();",
+                      "if (res.id) pm.collectionVariables.set('curso_id', res.id);"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
               "request": {
                 "method": "POST",
                 "url": "{{base_url}}/api/v1/cursos",
                 "header": [{ "key": "Content-Type", "value": "application/json" }],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"codigo\": \"CC001\",\n  \"nome\": \"Ciência da Computação\",\n  \"descricao\": \"Bacharelado em CC\",\n  \"faculdade\": \"FURB\",\n  \"campus\": \"Blumenau\",\n  \"cargaHoraria\": 3200,\n  \"periodo\": \"Noturno\",\n  \"ativo\": true\n}"
-                }
+                  "raw": "{\n  \"codigo\": \"CC001\",\n  \"nome\": \"Ciência da Computação\",\n  \"descricao\": \"Bacharelado em CC\",\n  \"faculdade\": \"FURB\",\n  \"campus\": \"Blumenau\",\n  \"cargaHoraria\": 3200,\n  \"periodo\": \"Noturno\",\n  \"enderecoDestino\": \"R. Antônio da Veiga, 140\",\n  \"cidade\": \"Blumenau\",\n  \"destinoLatitude\": -26.9014,\n  \"destinoLongitude\": -49.0804,\n  \"horarioPartida\": \"18:30\",\n  \"horarioRetorno\": \"22:30\",\n  \"dataInicio\": \"2026-02-01\",\n  \"dataFim\": \"2026-11-30\",\n  \"ativo\": true\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "description": "Campos novos no modelo UUID: enderecoDestino, cidade, destinoLatitude, destinoLongitude, horarioPartida, horarioRetorno, dataInicio, dataFim."
               }
             }
           ]
@@ -315,47 +382,61 @@
           "name": "Alunos",
           "item": [
             {
-              "name": "Listar alunos ⚠️ 404",
+              "name": "Listar alunos 🔧",
               "request": {
                 "method": "GET",
                 "url": "{{base_url}}/api/v1/alunos"
               }
             },
             {
-              "name": "Buscar por ID ⚠️ 404",
+              "name": "Buscar por ID 🔧",
               "request": {
                 "method": "GET",
                 "url": "{{base_url}}/api/v1/alunos/{{aluno_id}}"
               }
             },
             {
-              "name": "Buscar por matrícula ⚠️ 404",
+              "name": "Buscar por matrícula 🔧",
               "request": {
                 "method": "GET",
                 "url": "{{base_url}}/api/v1/alunos/matricula/2023001"
               }
             },
             {
-              "name": "Buscar por rota ⚠️ 404",
+              "name": "Buscar por rota 🔧",
               "request": {
                 "method": "GET",
                 "url": "{{base_url}}/api/v1/alunos/rota/Rota%201"
               }
             },
             {
-              "name": "Cadastrar aluno ⚠️ 404",
+              "name": "Cadastrar aluno 🔧",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const res = pm.response.json();",
+                      "if (res.id) pm.collectionVariables.set('aluno_id', res.id);"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
               "request": {
                 "method": "POST",
                 "url": "{{base_url}}/api/v1/alunos",
                 "header": [{ "key": "Content-Type", "value": "application/json" }],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"matricula\": \"2023001\",\n  \"nome\": \"Maria Souza\",\n  \"email\": \"maria@furb.br\",\n  \"telefone\": \"47999999999\",\n  \"rotaTransporte\": \"Rota 1\",\n  \"cursoId\": 1,\n  \"nomeCurso\": \"Ciência da Computação\",\n  \"faculdade\": \"FURB\",\n  \"ativo\": true\n}"
-                }
+                  "raw": "{\n  \"matricula\": \"2023001\",\n  \"nome\": \"Maria Souza\",\n  \"email\": \"maria@furb.br\",\n  \"telefone\": \"47999999999\",\n  \"rotaTransporte\": \"Rota 1\",\n  \"cursoId\": \"{{curso_id}}\",\n  \"nomeCurso\": \"Ciência da Computação\",\n  \"faculdade\": \"FURB\",\n  \"ativo\": true\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "description": "cursoId é UUID após o fix."
               }
             },
             {
-              "name": "Atualizar aluno ⚠️",
+              "name": "Atualizar aluno 🔧",
               "request": {
                 "method": "PUT",
                 "url": "{{base_url}}/api/v1/alunos/{{aluno_id}}",
@@ -367,7 +448,7 @@
               }
             },
             {
-              "name": "Desativar aluno ⚠️",
+              "name": "Desativar aluno 🔧",
               "request": {
                 "method": "DELETE",
                 "url": "{{base_url}}/api/v1/alunos/{{aluno_id}}"
@@ -379,19 +460,33 @@
           "name": "Presenças",
           "item": [
             {
-              "name": "Registrar presença ⚠️ 404",
+              "name": "Registrar presença 🔧",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const res = pm.response.json();",
+                      "if (res.id) pm.collectionVariables.set('presenca_id', res.id);"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
               "request": {
                 "method": "POST",
                 "url": "{{base_url}}/api/v1/presencas",
                 "header": [{ "key": "Content-Type", "value": "application/json" }],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"alunoId\": 1,\n  \"cursoId\": 1,\n  \"dataPresenca\": \"2026-06-26\",\n  \"status\": \"PRESENTE\",\n  \"horaEntrada\": \"18:50\",\n  \"horaSaida\": \"22:30\",\n  \"horasAulaComparecidas\": 4,\n  \"horasAulaTotal\": 4\n}"
-                }
+                  "raw": "{\n  \"alunoId\": \"{{aluno_id}}\",\n  \"cursoId\": \"{{curso_id}}\",\n  \"dataPresenca\": \"2026-06-26\",\n  \"status\": \"PRESENTE\",\n  \"horaEntrada\": \"18:50\",\n  \"horaSaida\": \"22:30\",\n  \"horasAulaComparecidas\": 4,\n  \"horasAulaTotal\": 4\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "description": "alunoId e cursoId são UUIDs após o fix."
               }
             },
             {
-              "name": "Confirmar presença hoje ⚠️",
+              "name": "Confirmar presença hoje 🔧",
               "request": {
                 "method": "POST",
                 "url": {
@@ -401,7 +496,7 @@
               }
             },
             {
-              "name": "Registrar ausência ⚠️",
+              "name": "Registrar ausência 🔧",
               "request": {
                 "method": "POST",
                 "url": {
@@ -415,7 +510,7 @@
               }
             },
             {
-              "name": "Listar presenças por período (aluno) ⚠️",
+              "name": "Listar presenças por período (aluno) 🔧",
               "request": {
                 "method": "GET",
                 "url": {
@@ -428,7 +523,7 @@
               }
             },
             {
-              "name": "Relatório de presença ⚠️",
+              "name": "Relatório de presença 🔧",
               "request": {
                 "method": "GET",
                 "url": {
@@ -441,7 +536,7 @@
               }
             },
             {
-              "name": "Justificar falta ⚠️",
+              "name": "Justificar falta 🔧",
               "request": {
                 "method": "PUT",
                 "url": {
@@ -588,10 +683,11 @@
               }
             },
             {
-              "name": "Sincronizar alunos ⚠️ 500",
+              "name": "Sincronizar alunos 🔧",
               "request": {
                 "method": "POST",
-                "url": "{{base_url}}/api/sync/alunos"
+                "url": "{{base_url}}/api/sync/alunos",
+                "description": "Depende de dados no presença-service. Funcionará após redeploy do presença."
               }
             },
             {
@@ -612,8 +708,8 @@
       ]
     },
     {
-      "name": "Roteirização (Route-Generator) ⚠️",
-      "description": "route-generator (C#/.NET 8) — porta 8080. Rotas: /api/rotas/**\n\n⚠️ ERROS ATUAIS (26/06/2026):\n- Health endpoint funcionando ✅\n- PUT /ponto-embarque e POST /gerar → 400 (DTO binding issue: record positional constructor vs JSON camelCase)\n- GET /motorista/atual → 500 (sem dados de rota no banco)\n- Workaround: aguardar fix de deploy com versão correta\n\nNOTA: o banco Cloud SQL precisa ter os IPs do Azure allowlistados (AzureCloud.brazilsouth).",
+      "name": "Roteirização (Route-Generator) 🔧",
+      "description": "route-generator (C#/.NET 8) — porta 8080. Rotas: /api/rotas/**\n\n🔧 FIX APLICADO: startup detecta schema antigo (sem presenca_outbox) e chama EnsureDeleted+EnsureCreated automaticamente.\n\nTodos os IDs são Guid (UUID) na versão atual.\nApós redeploy: PUT /ponto-embarque e POST /gerar devem funcionar com UUIDs.",
       "item": [
         {
           "name": "Health ✅ 200",
@@ -623,60 +719,74 @@
           }
         },
         {
-          "name": "Cadastrar/atualizar ponto de embarque ⚠️ 400",
+          "name": "Cadastrar/atualizar ponto de embarque 🔧",
           "request": {
             "method": "PUT",
             "url": "{{base_url}}/api/rotas/ponto-embarque",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"alunoId\": 1,\n  \"matricula\": \"2023001\",\n  \"nome\": \"Maria Souza\",\n  \"latitude\": -27.5954,\n  \"longitude\": -48.5480,\n  \"endereco\": \"R. Deputado Antônio Edu Vieira, Trindade\"\n}"
+              "raw": "{\n  \"alunoId\": \"{{aluno_id}}\",\n  \"matricula\": \"2023001\",\n  \"nome\": \"Maria Souza\",\n  \"latitude\": -27.5954,\n  \"longitude\": -48.5480,\n  \"endereco\": \"R. Deputado Antônio Edu Vieira, Trindade\"\n}",
+              "options": { "raw": { "language": "json" } }
             },
-            "description": "Campos obrigatórios: latitude, longitude. alunoId é long (default 0 = próprio usuário)."
+            "description": "alunoId é Guid (UUID). Campos obrigatórios: latitude, longitude."
           }
         },
         {
-          "name": "Buscar ponto de embarque ⚠️ 404",
+          "name": "Buscar ponto de embarque 🔧",
           "request": {
             "method": "GET",
-            "url": "{{base_url}}/api/rotas/ponto-embarque/1",
-            "description": "alunoId como path param (long). 404 se não houver dados."
+            "url": "{{base_url}}/api/rotas/ponto-embarque/{{aluno_id}}",
+            "description": "alunoId como path param (Guid/UUID)."
           }
         },
         {
-          "name": "Gerar rota ⚠️ 400",
+          "name": "Gerar rota 🔧",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.id) pm.collectionVariables.set('rota_id', res.id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "url": "{{base_url}}/api/rotas/gerar",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"veiculoId\": 1,\n  \"rotaTransporte\": \"Rota 1\",\n  \"cursoId\": 1,\n  \"origemLatitude\": -27.5954,\n  \"origemLongitude\": -48.5480,\n  \"destinoLatitude\": -27.5954,\n  \"destinoLongitude\": -48.5480,\n  \"destinoNome\": \"UFSC Trindade\"\n}"
+              "raw": "{\n  \"veiculoId\": \"{{veiculo_id}}\",\n  \"rotaTransporte\": \"Rota 1\",\n  \"cursoId\": \"{{curso_id}}\",\n  \"origemLatitude\": -27.5954,\n  \"origemLongitude\": -48.5480,\n  \"destinoLatitude\": -26.9014,\n  \"destinoLongitude\": -49.0804,\n  \"destinoNome\": \"FURB Blumenau\"\n}",
+              "options": { "raw": { "language": "json" } }
             },
-            "description": "Requer role ADMIN ou MOTORISTA. Retorna 201 com a rota gerada."
+            "description": "Requer role ADMIN ou MOTORISTA. veiculoId e cursoId são Guid (UUID). Retorna 201 com a rota gerada."
           }
         },
         {
-          "name": "Buscar rota por ID ⚠️ 404",
+          "name": "Buscar rota por ID 🔧",
           "request": {
             "method": "GET",
             "url": "{{base_url}}/api/rotas/{{rota_id}}",
-            "description": "404 enquanto não houver rotas geradas."
+            "description": "rotaId é Guid (UUID)."
           }
         },
         {
-          "name": "Rota atual do motorista ⚠️ 500",
+          "name": "Rota atual do motorista 🔧",
           "request": {
             "method": "GET",
             "url": {
-              "raw": "{{base_url}}/api/rotas/motorista/atual?veiculoId=1",
-              "query": [{ "key": "veiculoId", "value": "1" }]
+              "raw": "{{base_url}}/api/rotas/motorista/atual?veiculoId={{veiculo_id}}",
+              "query": [{ "key": "veiculoId", "value": "{{veiculo_id}}" }]
             },
-            "description": "Requer role ADMIN ou MOTORISTA. Retorna a rota mais recente do dia para o veículo."
+            "description": "veiculoId é Guid (UUID). Requer role ADMIN ou MOTORISTA."
           }
         },
         {
-          "name": "Publicar posição (telemetria) ⚠️ 404",
+          "name": "Publicar posição (telemetria) 🔧",
           "request": {
             "method": "POST",
             "url": "{{base_url}}/api/rotas/{{rota_id}}/posicao",
@@ -685,11 +795,11 @@
               "mode": "raw",
               "raw": "{\n  \"latitude\": -27.5954,\n  \"longitude\": -48.5480\n}"
             },
-            "description": "Requer role ADMIN ou MOTORISTA. 404 enquanto não houver rotas geradas."
+            "description": "Requer role ADMIN ou MOTORISTA. rotaId é Guid (UUID)."
           }
         },
         {
-          "name": "Confirmar embarque (aluno) ⚠️ 404",
+          "name": "Confirmar embarque (aluno) 🔧",
           "request": {
             "method": "POST",
             "url": "{{base_url}}/api/rotas/{{rota_id}}/paradas/{{aluno_id}}/confirmar",
@@ -698,7 +808,7 @@
               "mode": "raw",
               "raw": "{\n  \"latitude\": -27.5954,\n  \"longitude\": -48.5480\n}"
             },
-            "description": "Confirma embarque por geolocalização. Valida raio configurado (ConfirmationRadiusMeters)."
+            "description": "Confirma embarque por geolocalização. rotaId e alunoId são Guid (UUID)."
           }
         }
       ]
